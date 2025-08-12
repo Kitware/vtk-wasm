@@ -12,6 +12,6 @@
     "vite": "^6.3.5"
   },
   "dependencies": {
-    "@kitware/trame-vtklocal": "1.1.1"
+    "@kitware/vtk-wasm": "latest"
   }
 }
