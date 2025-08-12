@@ -3,3 +3,4 @@ docs/.vitepress/dist
 docs/.vitepress/cache
 examples/cpp/vtk
 examples/cpp/*/build
+dist
