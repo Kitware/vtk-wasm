@@ -42,6 +42,21 @@ import { createVtkObjectProxy, createNamespace } from "@kitware/vtk-wasm/vtk"
 import { ExportViewer, createViewer } from "@kitware/vtk-wasm/viewer"
 ```
 
+### RemoteSession progress
+
+```js
+import { RemoteSession } from "@kitware/vtk-wasm/remote"
+
+const session = new RemoteSession()
+const removeProgress = session.addProgressCallback(({ active, state, hash }) => {
+  // state: { current, total }, hash: { current, total }
+  // active is true while states/blobs are being fetched
+})
+
+// Later, to stop listening:
+removeProgress()
+```
+
 ### UMD imports
 
 ```js

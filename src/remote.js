@@ -29,6 +29,8 @@ export class RemoteSession {
     this.networkFetchStatus = null;
     this.cameraIds = new Set();
     this.stateCache = {};
+    this.progressCallbacks = new Set();
+    this.progressState = null;
     // FIXME - remove when VTK>=9.5
     this.renderWindowIds = new Set();
     this.renderWindowIdToInteractorId = new Map();
@@ -117,6 +119,52 @@ export class RemoteSession {
   }
 
   /**
+   * Register a callback to monitor download progress.
+   *
+   * @param {Function} callback
+   * @returns {Function} cleanup function
+   */
+  addProgressCallback(callback) {
+    if (callback) {
+      this.progressCallbacks.add(callback);
+    }
+    return () => {
+      this.progressCallbacks.delete(callback);
+    };
+  }
+
+  emitProgress() {
+    if (!this.progressCallbacks.size || !this.progressState) {
+      return;
+    }
+    const { active, state, hash } = this.progressState;
+    const payload = {
+      active,
+      state: {
+        current: state.current,
+        total: state.total,
+      },
+      hash: {
+        current: hash.current,
+        total: hash.total,
+      },
+    };
+    this.progressCallbacks.forEach((cb) => cb(payload));
+  }
+
+  incrementProgress(kind) {
+    if (!this.progressState) {
+      return;
+    }
+    const bucket = this.progressState[kind];
+    if (!bucket) {
+      return;
+    }
+    bucket.current = Math.min(bucket.current + 1, bucket.total);
+    this.emitProgress();
+  }
+
+  /**
    * Free old blobs if they go beyond the allowed cache size in Bytes
    * starting with the older ones.
    *
@@ -164,7 +212,9 @@ export class RemoteSession {
    */
   async fetchState(vtkId) {
     const serverState = await this.networkFetchState(vtkId);
-    return this.patchState(serverState);
+    const patchedState = this.patchState(serverState);
+    this.incrementProgress("state");
+    return patchedState;
   }
 
   /**
@@ -226,12 +276,14 @@ export class RemoteSession {
       await this.pendingArrays[hash];
       this.hashesMTime[hash] = this.currentMTime;
       delete this.pendingArrays[hash];
+      this.incrementProgress("hash");
       return;
     }
     // regular network call
     const array = await this.networkFetchHash(hash);
     this.sceneManager.registerBlob(hash, array);
     this.hashesMTime[hash] = this.currentMTime;
+    this.incrementProgress("hash");
     return array;
   }
 
@@ -276,6 +328,8 @@ export class RemoteSession {
       const serverStatus = await this.networkFetchStatus(vtkId);
       const pendingHashes = [];
       const pendingStates = [];
+      const hashesToFetch = [];
+      const statesToFetch = [];
 
       // Handle forcepush if any
       const resetIds = serverStatus.force_push || [];
@@ -286,17 +340,29 @@ export class RemoteSession {
       // Fetch any state that needs update
       serverStatus.ids.forEach(([vtkId, mtime]) => {
         if (!this.stateMTimes[vtkId] || this.stateMTimes[vtkId] < mtime) {
-          pendingStates.push(this.fetchState(vtkId));
+          statesToFetch.push(vtkId);
         }
       });
 
       // Fetch any blob that is missing
       serverStatus.hashes.forEach((hash) => {
         if (!this.hashesMTime[hash]) {
-          pendingHashes.push(this.fetchHash(hash));
+          hashesToFetch.push(hash);
         }
         this.hashesMTime[hash] = this.currentMTime;
       });
+
+      this.progressState = {
+        active: statesToFetch.length + hashesToFetch.length > 0,
+        state: { current: 0, total: statesToFetch.length },
+        hash: { current: 0, total: hashesToFetch.length },
+      };
+      this.emitProgress();
+
+      statesToFetch.forEach((stateId) =>
+        pendingStates.push(this.fetchState(stateId)),
+      );
+      hashesToFetch.forEach((hash) => pendingHashes.push(this.fetchHash(hash)));
 
       // Capture cameras
       serverStatus.cameras.forEach((v) => this.cameraIds.add(Number(v)));
@@ -344,6 +410,11 @@ export class RemoteSession {
     } catch (e) {
       console.error("Error in update", e);
     } finally {
+      if (this.progressState) {
+        this.progressState.active = false;
+        this.emitProgress();
+        this.progressState = null;
+      }
       this.updateInProgress--;
       if (this.updateInProgress) {
         this.updateInProgress = 0;
