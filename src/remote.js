@@ -271,18 +271,18 @@ export class RemoteSession {
    * @returns typed array matching blob content
    */
   async fetchHash(hash) {
+    let array;
     // pendingArray only filled via pushHash
     if (this.pendingArrays[hash]) {
       await this.pendingArrays[hash];
       this.hashesMTime[hash] = this.currentMTime;
       delete this.pendingArrays[hash];
-      this.incrementProgress("hash");
-      return;
+    } else {
+      // regular network call
+      array = await this.networkFetchHash(hash);
+      this.sceneManager.registerBlob(hash, array);
+      this.hashesMTime[hash] = this.currentMTime;
     }
-    // regular network call
-    const array = await this.networkFetchHash(hash);
-    this.sceneManager.registerBlob(hash, array);
-    this.hashesMTime[hash] = this.currentMTime;
     this.incrementProgress("hash");
     return array;
   }
@@ -326,8 +326,6 @@ export class RemoteSession {
 
     try {
       const serverStatus = await this.networkFetchStatus(vtkId);
-      const pendingHashes = [];
-      const pendingStates = [];
       const hashesToFetch = [];
       const statesToFetch = [];
 
@@ -353,16 +351,15 @@ export class RemoteSession {
       });
 
       this.progressState = {
-        active: statesToFetch.length + hashesToFetch.length > 0,
+        active: !!(statesToFetch.length + hashesToFetch.length),
         state: { current: 0, total: statesToFetch.length },
         hash: { current: 0, total: hashesToFetch.length },
       };
       this.emitProgress();
-
-      statesToFetch.forEach((stateId) =>
-        pendingStates.push(this.fetchState(stateId)),
+      const pendingStates = statesToFetch.map((stateId) =>
+        this.fetchState(stateId),
       );
-      hashesToFetch.forEach((hash) => pendingHashes.push(this.fetchHash(hash)));
+      const pendingHashes = hashesToFetch.map((hash) => this.fetchHash(hash));
 
       // Capture cameras
       serverStatus.cameras.forEach((v) => this.cameraIds.add(Number(v)));
