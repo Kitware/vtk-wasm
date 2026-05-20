@@ -4,12 +4,14 @@ import { createFuture } from "./future.js";
 import { MODULE_JS_FILE_EXTENSION, WASM_FILE_EXTENSION } from "./constants.js";
 
 /**
- * Check if provided URL points to a gzip bundle
+ * Check if provided URL points to a gzip bundle.
+ * Accepts both remote URLs ending in `.gz` and `blob:` URLs (which are assumed
+ * to represent in-memory gzip bundle data).
  * @param {string} url 
  * @returns {boolean}
  */
 export function isGzipBundle(url) {
-  return typeof url === "string" && url.endsWith(".gz");
+  return typeof url === "string" && (url.endsWith(".gz") || url.startsWith("blob:"));
 }
 
 /**
