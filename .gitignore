@@ -1,6 +1,7 @@
 node_modules
 docs/.vitepress/dist
 docs/.vitepress/cache
+docs/api
 docs/public/demo/playground
 docs/public/demo/simple-app
 examples/cpp/vtk
