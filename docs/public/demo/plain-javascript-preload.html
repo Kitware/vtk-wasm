@@ -10,7 +10,9 @@
   <body>
     <canvas id="vtk-wasm-window"></canvas>
     <script>
-      vtkWASM.createNamespace().then(buildWASMScene);
+      vtkWASM.loadVtkWasm().then((runtime) =>
+        buildWASMScene(runtime.createStandaloneSession().vtk),
+      );
     </script>
   </body>
 </html>
