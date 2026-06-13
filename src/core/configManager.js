@@ -32,15 +32,6 @@ export function normalizeConfig(config) {
   return config;
 }
 
-/**
- * Check if two configs are the same. Only rendering and exec are compared.
- * @param {object} config1 
- * @param {object} config2 
- * @returns {boolean}
- */
-export function isSameConfig(config1, config2) {
-  return config1.rendering === config2.rendering && config1.exec === config2.exec;
-}
 
 /**
  * Create Emscripten config from provided config

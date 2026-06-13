@@ -2,7 +2,7 @@ export default {
   base: "./",
   build: {
     lib: {
-      entry: "src/standalone.js",
+      entry: "src/index.js",
       formats: ["umd"],
       name: "vtkWASM",
       fileName: "vtk",

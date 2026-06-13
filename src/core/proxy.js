@@ -2,10 +2,6 @@ import { toCxxName, toCxxKeys, toJsName, toJsKeys } from "./javaScriptCxxTransla
 
 
 export function createPropGetter(wasm, wrapMethods, vtkId) {
-  if (!wasm.get) {
-    return {};
-  }
-
   const fullState = wasm.get(vtkId);
   const getPropHandler = {};
   Object.keys(fullState).forEach((propName) => {
@@ -17,9 +13,6 @@ export function createPropGetter(wasm, wrapMethods, vtkId) {
 }
 
 function createPropSetter(wasm, wrapMethods, vtkId) {
-  if (!wasm.get) {
-    return {};
-  }
   const fullState = wasm.get(vtkId);
   const setPropHandler = {};
   Object.keys(fullState).forEach((propName) => {
@@ -107,11 +100,6 @@ export function createVtkObjectProxy(
         return resolver;
       }
       if (prop === "state") {
-        if (!wasm.get) {
-          // To support old remote API
-          wasm.updateStateFromObject(vtkId);
-          return toJsKeys(wasm.getState(vtkId));
-        }
         return toJsKeys(wasm.get(vtkId));
       }
       if (prop === "delete") {

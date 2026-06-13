@@ -1,24 +1,25 @@
 import "./style.css";
 
-import { VtkWASMLoader } from "./wasmLoader";
-import { createVtkObjectProxy } from "./core/proxy";
+import { createInstantiatorProxy } from "./core/proxy";
 import { addCanvasEventListeners, removeCanvasEventListeners } from "./core/canvasEventListeners";
 
-// url => loader instance
-const WASM_LOADERS = {};
-
 /**
- * RemoteSession type definition
+ * A server-driven VTK session. Wraps a C++ `vtkRemoteSession` and synchronizes
+ * object state fetched over the network into the local WebAssembly scene.
  *
- * @typedef {Object} RemoteSession
- * @property {Boolean} loaded
- * @property {Set<int>} cameraIds
- * @property {wasmSceneManager} sceneManager
+ * Obtain one from {@link VtkWasmRuntime#createRemoteSession}.
  */
 export class RemoteSession {
-  constructor() {
-    this.sceneManager = null;
-    this.loaded = false;
+  #native = null;
+  #disposed = false;
+  #vtkProxyCache = null;
+  #idToRef = null;
+
+  /**
+   * @param {object} native - the C++ vtkRemoteSession instance.
+   */
+  constructor(native) {
+    this.#native = native;
     //
     this.updateInProgress = 0;
     this.currentMTime = 1;
@@ -32,82 +33,23 @@ export class RemoteSession {
     this.stateCache = {};
     this.progressCallbacks = new Set();
     this.progressState = null;
-    // FIXME - remove when VTK>=9.5
-    this.renderWindowIds = new Set();
-    this.renderWindowIdToInteractorId = new Map();
     this.renderWindowSizes = {};
 
-    // vtkObject Proxy handling
-    this.vtkProxyCache = new WeakMap();
-    this.idToRef = new Map();
-    this.internalWrapMethods = {};
-    this.internalWrapMethods.isVtkObject = (obj) => this.vtkProxyCache.has(obj);
-    this.internalWrapMethods.decorateKwargs = (kwargs) => {
-      const wrapped = {};
-      Object.entries(kwargs).forEach(([k, v]) => {
-        if (this.vtkProxyCache.has(v)) {
-          wrapped[k] = v.obj;
-        } else {
-          wrapped[k] = v;
-        }
-      });
-      return wrapped;
-    };
-    this.internalWrapMethods.decorateArgs = (args) => {
-      return args.map((v) => (this.vtkProxyCache.has(v) ? v.obj : v));
-    };
-    this.internalWrapMethods.decorateResult = (result) => {
-      if (result == null) {
-        return result;
-      }
-      if (result?.Id) {
-        return createVtkObjectProxy(
-          this.sceneManager,
-          this.vtkProxyCache,
-          this.idToRef,
-          this.internalWrapMethods,
-          result.Id,
-        );
-      }
-      return result;
-    };
+    // renderWindowId -> user-provided canvas DOM id
+    this.canvasIds = new Map();
 
-    // Canvas management
-    this.offlineCanvasContainer = document.createElement("div");
-    this.offlineCanvasContainer.setAttribute("class", "unused-canvas");
-    document.body.appendChild(this.offlineCanvasContainer);
+    // vtkObject proxy handling (create + getVtkObject + result wrapping)
+    this.#vtkProxyCache = new WeakMap();
+    this.#idToRef = new Map();
+    this.vtk = createInstantiatorProxy(native, this.#vtkProxyCache, this.#idToRef);
+
+    // Do not let server-side window sizes override the client canvas size.
+    native.skipProperty("vtkRenderWindow", "Size");
   }
 
-  /**
-   * Load VTK WASM library using the base url provided
-   *
-   * @param {str} wasmBaseURL
-   */
-  async load(wasmBaseURL, config, wasmBaseName) {
-    if (!WASM_LOADERS[wasmBaseURL]) {
-      WASM_LOADERS[wasmBaseURL] = new VtkWASMLoader();
-    }
-
-    await WASM_LOADERS[wasmBaseURL].load(wasmBaseURL, config, wasmBaseName);
-    this.sceneManager =
-      await WASM_LOADERS[wasmBaseURL].createRemoteSession(config);
-    this.stateDecorator = WASM_LOADERS[wasmBaseURL].createStateDecorator();
-    this.loaded = true;
-
-    // Ignore state properties - only in 9.5
-    if (this.sceneManager.skipProperty) {
-      // Will be enough when wasm check for superclass
-      this.sceneManager.skipProperty("vtkRenderWindow", "Size");
-      // FIXME: but for now we need specific class (window/linux/mac/wasm)
-      [
-        "vtkWin32OpenGLRenderWindow",
-        "vtkXOpenGLRenderWindow",
-        "vtkCocoaRenderWindow",
-        "vtkWebAssemblyOpenGLRenderWindow",
-      ].forEach((className) =>
-        this.sceneManager.skipProperty(className, "Size"),
-      );
-    }
+  /** The underlying C++ session. Escape hatch; prefer {@link RemoteSession#vtk}. */
+  get native() {
+    return this.#native;
   }
 
   /**
@@ -172,7 +114,7 @@ export class RemoteSession {
    * @param {int} cacheSize
    */
   freeMemory(cacheSize = 0) {
-    const memArrays = this.sceneManager.getTotalBlobMemoryUsage();
+    const memArrays = this.#native.getTotalBlobMemoryUsage();
     const threshold = Number(cacheSize);
 
     if (memArrays > threshold) {
@@ -192,11 +134,11 @@ export class RemoteSession {
       });
 
       // Remove blobs starting by the old ones
-      while (this.sceneManager.getTotalBlobMemoryUsage() > threshold) {
+      while (this.#native.getTotalBlobMemoryUsage() > threshold) {
         const hashesToDelete = tsMap[mtimeToFree];
         if (hashesToDelete) {
           for (let i = 0; i < hashesToDelete.length; i++) {
-            this.sceneManager.unRegisterBlob(hashesToDelete[i]);
+            this.#native.unRegisterBlob(hashesToDelete[i]);
             delete this.hashesMTime[hashesToDelete[i]];
           }
         }
@@ -206,7 +148,7 @@ export class RemoteSession {
   }
 
   /**
-   * Fetch and register state inside sceneManager
+   * Fetch and register state inside the session
    *
    * @param {int} vtkId
    * @returns fetched state as string
@@ -219,54 +161,21 @@ export class RemoteSession {
   }
 
   /**
-   * Push state to internal structure
+   * Record the MTime of an incoming state.
    *
    * @param {str} state
+   * @returns {str} the unchanged state
    */
   patchState(state) {
     if (state.length > 0) {
-      const stateObj = JSON.parse(state);
-      const { Id, MTime } = stateObj;
+      const { Id, MTime } = JSON.parse(state);
       this.stateMTimes[Id] = MTime;
-
-      if (
-        !this.sceneManager.skipProperty ||
-        !this.sceneManager.bindRenderWindow
-      ) {
-        // Not needed in >=9.5
-        if (this.renderWindowIds.has(Id) && stateObj?.Interactor?.Id) {
-          this.renderWindowIdToInteractorId.set(stateObj.Interactor.Id, Id);
-
-          // Connect canvas selector
-          stateObj.CanvasSelector = this.getCanvasSelector(Id);
-
-          // Don't use server side size (ignore prop skip it)
-          delete stateObj["Size"];
-          if (this.renderWindowSizes[Id]) {
-            stateObj.Size = this.renderWindowSizes[Id];
-          }
-
-          // Need to patch classname to allow OSMesa server to work
-          stateObj.ClassName = "vtkCocoaRenderWindow";
-
-          return JSON.stringify(stateObj);
-        }
-
-        // Interactor - to remove once API available on C++ side
-        if (this.renderWindowIdToInteractorId.has(Id)) {
-          // Connect canvas selector
-          stateObj.CanvasSelector = this.getCanvasSelector(
-            this.renderWindowIdToInteractorId.get(Id),
-          );
-          return JSON.stringify(stateObj);
-        }
-      }
       return state;
     }
   }
 
   /**
-   * Fetch and register blob inside sceneManager
+   * Fetch and register blob inside the session
    *
    * @param {str} hash
    * @returns typed array matching blob content
@@ -281,7 +190,7 @@ export class RemoteSession {
     } else {
       // regular network call
       array = await this.networkFetchHash(hash);
-      this.sceneManager.registerBlob(hash, array);
+      this.#native.registerBlob(hash, array);
       this.hashesMTime[hash] = this.currentMTime;
     }
     this.incrementProgress("hash");
@@ -297,12 +206,12 @@ export class RemoteSession {
     this.pendingArrays[hash] = new Promise((resolve) => {
       if (arrayOrBlob.arrayBuffer) {
         arrayOrBlob.arrayBuffer().then((buffer) => {
-          this.sceneManager.registerBlob(hash, new Uint8Array(buffer));
+          this.#native.registerBlob(hash, new Uint8Array(buffer));
           this.hashesMTime[hash] = this.currentMTime;
           resolve();
         });
       } else {
-        this.sceneManager.registerBlob(hash, arrayOrBlob);
+        this.#native.registerBlob(hash, arrayOrBlob);
         this.hashesMTime[hash] = this.currentMTime;
         resolve();
       }
@@ -316,9 +225,6 @@ export class RemoteSession {
    * @param {int} vtkId
    */
   async update(vtkId, bindCanvas = false) {
-    // Not needed once 9.5 is out...
-    this.renderWindowIds.add(vtkId);
-
     this.updateInProgress++;
     if (this.updateInProgress !== 1) {
       // console.error("Skip concurrent update");
@@ -367,7 +273,7 @@ export class RemoteSession {
 
       // Remove state that should be ignored
       serverStatus.ignore_ids.forEach((vtkId) =>
-        this.sceneManager.unRegisterState(vtkId),
+        this.#native.unRegisterState(vtkId),
       );
 
       // Ensure completion of all network calls
@@ -380,27 +286,23 @@ export class RemoteSession {
       while (statesToRegister.length) {
         const state = statesToRegister.pop();
         if (state) {
-          this.sceneManager.registerState(this.stateDecorator(state));
+          this.#native.registerState(JSON.parse(state));
         }
       }
 
       // Bump local mtime and process states to reflect server state
       try {
-        this.sceneManager.updateObjectsFromStates();
+        this.#native.updateObjectsFromStates();
         if (vtkId in this.renderWindowSizes) {
           const [w, h] = this.renderWindowSizes[vtkId];
-          this.sceneManager.setSize(vtkId, w, h);
+          this.#native.setSize(vtkId, w, h);
         }
 
-        // Prevent state patching with new API
-        if (bindCanvas && this.sceneManager.bindRenderWindow) {
-          this.sceneManager.bindRenderWindow(
-            vtkId,
-            this.getCanvasSelector(vtkId),
-          );
+        if (bindCanvas) {
+          this.#native.bindRenderWindow(vtkId, this.getCanvasSelector(vtkId));
         }
 
-        await this.sceneManager.render(vtkId);
+        await this.#native.render(vtkId);
         // TODO outside:
         // - freeMemory: to keep memory in check
       } catch (e) {
@@ -434,13 +336,7 @@ export class RemoteSession {
     if (useCache && this.stateCache[wasmId]) {
       return this.stateCache[wasmId];
     }
-    // New API
-    if (this.sceneManager.get) {
-      return this.sceneManager.get(wasmId);
-    }
-    // Old API
-    this.sceneManager.updateStateFromObject(wasmId);
-    return this.sceneManager.getState(wasmId);
+    return this.#native.get(wasmId);
   }
 
   /**
@@ -474,50 +370,60 @@ export class RemoteSession {
   }
 
   /**
-   * Return canvas selector based on renderWindowId
+   * Return the CSS selector for the canvas registered to a render window.
    *
    * @param {int} renderWindowId
-   * @returns the selector string to find the given canvas
+   * @returns {string} the selector string to find the given canvas
    */
   getCanvasSelector(renderWindowId) {
-    return `.vtk-wasm-${renderWindowId}`;
+    const canvasId = this.canvasIds.get(Number(renderWindowId));
+    if (!canvasId) {
+      throw new Error(
+        `No canvas registered for render window ${renderWindowId}. ` +
+          `Call bindCanvas(renderWindowId, canvasId) first.`,
+      );
+    }
+    return `#${canvasId}`;
   }
 
   /**
-   * Create canvas if missing and add it to the provided targetElement container.
+   * Associate a render window with a user-provided canvas (by its DOM id) and
+   * install the interaction listeners on it.
+   *
+   * RemoteSession never creates, moves, or removes canvas elements: the caller
+   * owns the canvas lifecycle and must have added it to the DOM beforehand.
    *
    * @param {int} renderWindowId
-   * @param {HTMLElement} targetElement
-   * @returns the canvas selector string
+   * @param {string} canvasId - the `id` attribute of the user's `<canvas>`.
+   * @returns {string} the canvas selector string
    */
-  bindCanvasToDOM(renderWindowId, targetElement) {
+  bindCanvas(renderWindowId, canvasId) {
+    this.canvasIds.set(Number(renderWindowId), canvasId);
     const canvasSelector = this.getCanvasSelector(renderWindowId);
-    let canvas = this.offlineCanvasContainer.querySelector(canvasSelector);
-
-    if (!canvas) {
-      // Create it
-      canvas = document.createElement("canvas");
-      canvas.setAttribute("class", canvasSelector.substring(1));
-      canvas.setAttribute("tabindex", "0");
+    const canvas = document.querySelector(canvasSelector);
+    if (canvas) {
       addCanvasEventListeners(canvas);
     }
-
-    targetElement.appendChild(canvas);
     return canvasSelector;
   }
 
   /**
-   * Remove canvas from its current container but keep it for possible followup usage.
+   * Remove the interaction listeners installed by {@link RemoteSession#bindCanvas}
+   * and forget the render window -> canvas mapping. The canvas element itself is
+   * left untouched.
    *
    * @param {int} renderWindowId
    */
-  unbindCanvasToDOM(renderWindowId) {
-    const canvasSelector = this.getCanvasSelector(renderWindowId);
-    const canvas = document.querySelector(canvasSelector);
+  unbindCanvas(renderWindowId) {
+    const canvasId = this.canvasIds.get(Number(renderWindowId));
+    if (!canvasId) {
+      return;
+    }
+    const canvas = document.getElementById(canvasId);
     if (canvas) {
       removeCanvasEventListeners(canvas);
-      this.offlineCanvasContainer.appendChild(canvas);
     }
+    this.canvasIds.delete(Number(renderWindowId));
   }
 
   /**
@@ -529,45 +435,63 @@ export class RemoteSession {
    */
   async setSize(renderWindowId, width, height) {
     this.renderWindowSizes[renderWindowId] = [width, height];
-    const canvasSelector = this.getCanvasSelector(renderWindowId);
-    const canvas = document.querySelector(canvasSelector);
+    if (!this.canvasIds.has(Number(renderWindowId))) {
+      return;
+    }
+    const canvas = document.querySelector(this.getCanvasSelector(renderWindowId));
     if (canvas) {
       canvas.width = width;
       canvas.height = height;
 
-      this.sceneManager.setSize(renderWindowId, width, height);
-      await this.sceneManager.render(renderWindowId);
+      this.#native.setSize(renderWindowId, width, height);
+      await this.#native.render(renderWindowId);
     }
   }
-  /**
-   * @typedef {object} vtkObject
-   * @property {number} id - WASM id
-   * @property {object} obj - Return id wrapped as an object {Id: wasmId}.
-   * @property {object} state - Return full object state
-   * @method delete - Remove object from WASM stack
-   * @method set - Update a batch of properties at once using keyword arguments
-   * @method observe(eventName, fn) -> tag - Attach listener on a specific event
-   * @method unObserve(tag) - Detach listener
-   * @method unObserveAll() - Detach all listeners
-   * @property VTK Property Name - Read VTK property from its state
-   * @property VTK Property Name as Setter - Set VTK property
-   * @method VTK Method Name - Async call to vtk internal
-   */
+
   /**
    * Get a helper proxy for controlling the vtkObject available on the WASM side.
-   * @param {number} vtkId - wasm id for given vtkObject
-   * @returns {vtkObject}
+   *
+   * The returned proxy exposes:
+   * - `id` — the WASM id, and `obj` — the id wrapped as `{ Id: wasmId }`.
+   * - `state` — the full object state.
+   * - `delete()` — remove the object from the WASM stack.
+   * - `set(kwargs)` — update a batch of properties at once.
+   * - `observe(eventName, fn) -> tag` / `unObserve(tag)` / `unObserveAll()` — manage listeners.
+   * - each VTK property as a getter/setter, and each VTK method as an async call.
+   *
+   * @param {number} vtkId - wasm id for the given vtkObject
+   * @returns {object} the vtkObject proxy
    */
   getVtkObject(vtkId) {
-    return createVtkObjectProxy(
-      this.sceneManager,
-      this.vtkProxyCache,
-      this.idToRef,
-      this.internalWrapMethods,
-      vtkId,
-    );
+    return this.vtk.getVtkObject(vtkId);
+  }
+
+  /**
+   * Free the C++ session and detach the interaction listeners installed on the
+   * user-provided canvases. The canvas elements themselves are left untouched.
+   * The session is unusable afterwards.
+   */
+  dispose() {
+    if (this.#disposed) {
+      return;
+    }
+    this.#disposed = true;
+    this.progressCallbacks.clear();
+    this.#idToRef.clear();
+    this.canvasIds.forEach((canvasId) => {
+      const canvas = document.getElementById(canvasId);
+      if (canvas) {
+        removeCanvasEventListeners(canvas);
+      }
+    });
+    this.canvasIds.clear();
+    if (typeof this.#native?.delete === "function") {
+      this.#native.delete();
+    }
+    this.#native = null;
+  }
+
+  [Symbol.dispose]() {
+    this.dispose();
   }
 }
-
-// For backward compatibility
-export const VtkWASMHandler = RemoteSession;
