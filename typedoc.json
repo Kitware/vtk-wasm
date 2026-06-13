@@ -1,0 +1,15 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
+  "entryPoints": ["src/index.js", "src/viewer.js"],
+  "tsconfig": "tsconfig.json",
+  "out": "docs/api",
+  "readme": "none",
+  "githubPages": false,
+  "hideGenerator": true,
+  "entryFileName": "index",
+  "useCodeBlocks": true,
+  "expandObjects": true,
+  "parametersFormat": "table",
+  "docsRoot": "docs"
+}
