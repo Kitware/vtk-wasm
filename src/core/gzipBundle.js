@@ -3,15 +3,6 @@ import { stripLeadingDotSlash } from "./stringOps.js";
 import { MODULE_JS_FILE_EXTENSION, WASM_FILE_EXTENSION } from "./constants.js";
 
 /**
- * Check if provided URL points to a gzip bundle
- * @param {string} url 
- * @returns {boolean}
- */
-export function isGzipBundle(url) {
-  return typeof url === "string" && url.endsWith(".gz");
-}
-
-/**
  * Fetch gzip bundle from provided URL
  * @param {string} url 
  * @returns {Promise<ArrayBuffer>} The decompressed tar archive contents from the gzip bundle.

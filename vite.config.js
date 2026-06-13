@@ -3,8 +3,7 @@ export default {
   build: {
     lib: {
       entry: {
-        remote: "src/remote.js",
-        vtk: "src/standalone.js",
+        index: "src/index.js",
         viewer: "src/viewer.js",
       },
       formats: ["es"],

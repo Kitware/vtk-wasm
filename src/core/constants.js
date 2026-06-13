@@ -9,6 +9,7 @@ export const EXECUTION_MODES = Object.freeze({
 });
 
 export const DEFAULT_WASM_BASE_NAME = 'vtk';
+export const DEFAULT_WASM_URL_IS_GZIP = true;
 
 export const DEFAULT_CONFIG = Object.freeze({
   rendering: RENDERING_BACKENDS.WEBGL,
