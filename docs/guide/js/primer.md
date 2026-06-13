@@ -2,7 +2,7 @@
 
 This primer introduces the **vtk** namespace and the core interaction patterns used to create and manipulate VTK objects. If you want to jump straight to rendering, go to [WebGL2 rendering within HTML canvas](#webgl2-rendering-within-html-canvas)
 
-All of these code snippets load the vtk-wasm JS library and the binaries using a `<script>` tag in the HTML - for convenience. See [HTML Script Tag](./plain.md) for details.
+All of these code snippets load the vtk-wasm JS library and the binaries using a `<script>` tag in the HTML - for convenience. See [HTML Script Tag](./integration.md#html-script-tag) for details.
 
 ## Create objects
 
