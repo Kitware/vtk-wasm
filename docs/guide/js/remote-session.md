@@ -7,9 +7,9 @@ Use a remote session when the data is large, generated server-side, or shared ac
 Create one from a [runtime](./loading.md):
 
 ```js
-import { loadVtkWasm } from "@kitware/vtk-wasm";
+import { loadVtkWasmAsync } from "@kitware/vtk-wasm";
 
-const runtime = await loadVtkWasm({ url: VTK_WASM_BUNDLE_URL });
+const runtime = await loadVtkWasmAsync({ url: VTK_WASM_BUNDLE_URL });
 const remote = runtime.createRemoteSession();
 ```
 
@@ -27,7 +27,7 @@ Each fetcher wraps one server RPC. The trame server side lives in [protocol.py](
 
 - **`fetchHash(hash) => Promise<Uint8Array>`** — given a content hash, return the corresponding binary **blob**. The transport may hand you a `Blob` or a `TypedArray`, so convert the result to a `Uint8Array` before returning. Backs `vtklocal.get.hash`.
 
-- **`fetchStatus(renderWindowId) => Promise<Status>`** — given a render window id, return a manifest of **what exists and what changed since last time**, so the session knows what to pull on the next [`update`](#drive-updates). Backs `vtklocal.get.status`. The returned object carries:
+- **`fetchStatus(renderWindowId) => Promise<Status>`** — given a render window id, return a manifest of **what exists and what changed since last time**, so the session knows what to pull on the next [`updateAsync`](#drive-updates). Backs `vtklocal.get.status`. The returned object carries:
   - `ids` — `[id, mtime]` pairs for every object reachable from the render window
   - `hashes` — content hashes of the blobs those objects reference
   - `cameras` — ids of the active cameras; `force_push` and `ignore_ids` select which to push to the server or leave alone (e.g. to keep the client's local camera)
@@ -37,7 +37,7 @@ Each fetcher wraps one server RPC. The trame server side lives in [protocol.py](
 
 The example below stands in for a server with a handful of **canned object states**: a render window that owns a renderer whose `Background` is gray. The three fetchers read from that in-memory scene exactly as they would read from the wire, so the session hydrates and renders without any backend.
 
-The state objects mirror what `vtklocal.get.state` returns: each carries an `Id`, a `ClassName`, its `SuperClassNames`, and the properties to apply. References to other objects are `{ "Id": n }`, and `fetchStatus` advertises every object so the session knows what to pull on the first [`update`](#drive-updates). This scene has no binary data, so `fetchHash` is never called.
+The state objects mirror what `vtklocal.get.state` returns: each carries an `Id`, a `ClassName`, its `SuperClassNames`, and the properties to apply. References to other objects are `{ "Id": n }`, and `fetchStatus` advertises every object so the session knows what to pull on the first [`updateAsync`](#drive-updates). This scene has no binary data, so `fetchHash` is never called.
 
 <Playground display-i-frame>
     <textarea data-lang="html" style="display:none"><!doctype html>
@@ -54,8 +54,8 @@ The state objects mirror what `vtklocal.get.state` returns: each carries an `Id`
     </div>
   </body>
 </html></textarea>
-    <pre data-lang="js" style="display:none">import { loadVtkWasm } from "/vtk-wasm/data/esm/index.mjs";
-const runtime = await loadVtkWasm({
+    <pre data-lang="js" style="display:none">import { loadVtkWasmAsync } from "/vtk-wasm/data/esm/index.mjs";
+const runtime = await loadVtkWasmAsync({
   url: "https://gitlab.kitware.com/api/v4/projects/13/packages/generic/vtk-wasm32-emscripten/9.6.20260228/vtk-9.6.20260228-wasm32-emscripten.tar.gz",
 });
 const remote = runtime.createRemoteSession();
@@ -148,10 +148,10 @@ remote.bindCanvas(RENDER_WINDOW_ID, canvas);
 const resizeObserver = new ResizeObserver((entries) => {
   // Content box already in device pixels — no devicePixelRatio math needed.
   const { inlineSize, blockSize } = entries[0].devicePixelContentBoxSize[0];
-  remote.setSize(RENDER_WINDOW_ID, inlineSize, blockSize);
+  remote.setSizeAsync(RENDER_WINDOW_ID, inlineSize, blockSize);
 });
 resizeObserver.observe(container);
-await remote.update(RENDER_WINDOW_ID);
+await remote.updateAsync(RENDER_WINDOW_ID);
     </pre>
 </Playground>
 
@@ -163,7 +163,7 @@ The session never creates, moves, or removes canvas elements — you own them. C
 const canvas = document.createElement("canvas");
 remote.bindCanvas(renderWindowId, canvas);           // pass the element directly…
 // remote.bindCanvas(renderWindowId, "my-canvas");   // …or the id of a canvas in the DOM
-remote.setSize(renderWindowId, 800, 600);       // size the canvas + render window
+remote.setSizeAsync(renderWindowId, 800, 600);       // size the canvas + render window
 ```
 
 Passing the element directly registers it with Emscripten's `specialHTMLTargets`, so the canvas needs neither an `id` nor to be attached to the document — handy for off-screen or framework-managed canvases. (On builds that don't expose `specialHTMLTargets`, the canvas must have an `id` so a CSS selector can be used instead.)
@@ -172,10 +172,10 @@ When the canvas goes away, [`unbindCanvas`](/api/@kitware/vtk-wasm/classes/Remot
 
 ## Drive updates
 
-Call [`update`](/api/@kitware/vtk-wasm/classes/RemoteSession#update) to pull the latest server state for a render window and render it.
+Call [`updateAsync`](/api/@kitware/vtk-wasm/classes/RemoteSession#updateasync) to pull the latest server state for a render window and render it.
 
 ```js
-await remote.update(renderWindowId);
+await remote.updateAsync(renderWindowId);
 ```
 
 To surface download progress (state + blob counts), register a callback with [`addProgressCallback`](/api/@kitware/vtk-wasm/classes/RemoteSession#addprogresscallback); it returns a function that removes the callback.
