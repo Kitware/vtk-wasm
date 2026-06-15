@@ -19,6 +19,29 @@ function cacheKey(url, wasmBaseName, config) {
   return `${url}::${wasmBaseName}::${config.rendering}::${config.exec}`;
 }
 
+// Emscripten keeps `specialHTMLTargets` as a module-private variable, so there
+// is no way to register a canvas element (vs. a CSS selector) from the outside.
+// Alias it onto `Module` at its declaration so the runtime can expose it. The
+// symbol is a non-minified library name, so this string match is stable.
+const SPECIAL_TARGETS_DECL = "var specialHTMLTargets=[";
+const SPECIAL_TARGETS_PATCH = "var specialHTMLTargets=Module.specialHTMLTargets=[";
+
+/**
+ * Patch the Emscripten glue source so `specialHTMLTargets` is reachable as
+ * `Module.specialHTMLTargets`. No-op if the pattern is absent or already
+ * patched (e.g. a build that already exports it).
+ *
+ * @param {ArrayBufferLike} buffer - the glue JavaScript source bytes.
+ * @returns {ArrayBufferLike} the (possibly patched) source bytes.
+ */
+function exposeSpecialHTMLTargets(buffer) {
+  const text = new TextDecoder().decode(buffer);
+  if (text.includes(SPECIAL_TARGETS_PATCH) || !text.includes(SPECIAL_TARGETS_DECL)) {
+    return buffer;
+  }
+  return new TextEncoder().encode(text.replace(SPECIAL_TARGETS_DECL, SPECIAL_TARGETS_PATCH)).buffer;
+}
+
 /**
  * Ensure `window.createVTKWASM` is available, loading the glue script if needed.
  * Returns the wasm binary descriptor when it had to be extracted from a gzip
@@ -35,7 +58,7 @@ async function prepareModuleFactory(url, urlIsGzip, wasmBaseName, config) {
   if (urlIsGzip) {
     const gzipArrayBuffer = await fetchGzipBundle(url);
     const { js, wasm } = await extractFilesFromGzipBundle(gzipArrayBuffer, config, wasmBaseName);
-    const javaScriptBlobURL = createBlobURL(js.buffer, MIME_TYPES.JAVASCRIPT);
+    const javaScriptBlobURL = createBlobURL(exposeSpecialHTMLTargets(js.buffer), MIME_TYPES.JAVASCRIPT);
     try {
       await loadWebAssemblyModuleFromScript(javaScriptBlobURL);
     } finally {
@@ -156,7 +179,7 @@ export class VtkWasmRuntime {
    */
   createRemoteSession() {
     this.#assertLive();
-    return new RemoteSession(new this.#module.vtkRemoteSession());
+    return new RemoteSession(new this.#module.vtkRemoteSession(), this.#module);
   }
 
   /**

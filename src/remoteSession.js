@@ -11,15 +11,18 @@ import { addCanvasEventListeners, removeCanvasEventListeners } from "./core/canv
  */
 export class RemoteSession {
   #native = null;
+  #module = null;
   #disposed = false;
   #vtkProxyCache = null;
   #idToRef = null;
 
   /**
    * @param {object} native - the C++ vtkRemoteSession instance.
+   * @param {object} wasmModule - the Emscripten module the session belongs to.
    */
-  constructor(native) {
+  constructor(native, wasmModule) {
     this.#native = native;
+    this.#module = wasmModule;
     //
     this.updateInProgress = 0;
     this.currentMTime = 1;
@@ -34,9 +37,12 @@ export class RemoteSession {
     this.progressCallbacks = new Set();
     this.progressState = null;
     this.renderWindowSizes = {};
+    this.boundRenderWindows = new Set();
 
-    // renderWindowId -> user-provided canvas DOM id
-    this.canvasIds = new Map();
+    // renderWindowId -> { canvas, target } where `canvas` is the user-provided
+    // element and `target` is the string handed to native.bindRenderWindow
+    // (a specialHTMLTargets key when available, otherwise a CSS selector).
+    this.canvasTargets = new Map();
 
     // vtkObject proxy handling (create + getVtkObject + result wrapping)
     this.#vtkProxyCache = new WeakMap();
@@ -224,7 +230,7 @@ export class RemoteSession {
    *
    * @param {int} vtkId
    */
-  async update(vtkId, bindCanvas = false) {
+  async update(vtkId) {
     this.updateInProgress++;
     if (this.updateInProgress !== 1) {
       // console.error("Skip concurrent update");
@@ -293,18 +299,22 @@ export class RemoteSession {
       // Bump local mtime and process states to reflect server state
       try {
         this.#native.updateObjectsFromStates();
-        if (vtkId in this.renderWindowSizes) {
-          const [w, h] = this.renderWindowSizes[vtkId];
-          this.#native.setSize(vtkId, w, h);
+        const state = this.getVtkObject(vtkId).state;
+        const isRenderWindow =
+          state?.className === "vtkRenderWindow" ||
+          state?.superClassNames?.includes("vtkRenderWindow");
+        if (isRenderWindow) {
+          const rwId = Number(vtkId);
+          if (this.canvasTargets.has(rwId) && !this.boundRenderWindows.has(rwId)) {
+            this.#native.bindRenderWindow(rwId, this.getCanvasTarget(rwId));
+            this.boundRenderWindows.add(rwId);
+          }
+          if (rwId in this.renderWindowSizes) {
+            const [w, h] = this.renderWindowSizes[rwId];
+            this.#native.setSize(rwId, w, h);
+          }
+          await this.#native.render(rwId);
         }
-
-        if (bindCanvas) {
-          this.#native.bindRenderWindow(vtkId, this.getCanvasSelector(vtkId));
-        }
-
-        await this.#native.render(vtkId);
-        // TODO outside:
-        // - freeMemory: to keep memory in check
       } catch (e) {
         console.error("WASM update failed");
         console.log(e);
@@ -370,41 +380,71 @@ export class RemoteSession {
   }
 
   /**
-   * Return the CSS selector for the canvas registered to a render window.
+   * Return the native event-target string for the canvas registered to a render
+   * window. This is a `specialHTMLTargets` key when the build exposes that map,
+   * otherwise a CSS selector. Pass it to `native.bindRenderWindow`.
    *
    * @param {int} renderWindowId
-   * @returns {string} the selector string to find the given canvas
+   * @returns {string} the event-target string for the given canvas
    */
-  getCanvasSelector(renderWindowId) {
-    const canvasId = this.canvasIds.get(Number(renderWindowId));
-    if (!canvasId) {
+  getCanvasTarget(renderWindowId) {
+    const entry = this.canvasTargets.get(Number(renderWindowId));
+    if (!entry) {
       throw new Error(
         `No canvas registered for render window ${renderWindowId}. ` +
-          `Call bindCanvas(renderWindowId, canvasId) first.`,
+          `Call bindCanvas(renderWindowId, canvas) first.`,
       );
     }
-    return `#${canvasId}`;
+    return entry.target;
   }
 
   /**
-   * Associate a render window with a user-provided canvas (by its DOM id) and
-   * install the interaction listeners on it.
+   * Associate a render window with a user-provided canvas and install the
+   * interaction listeners on it.
    *
    * RemoteSession never creates, moves, or removes canvas elements: the caller
-   * owns the canvas lifecycle and must have added it to the DOM beforehand.
+   * owns the canvas lifecycle. The canvas may be passed as the element itself or
+   * as the `id` of an element already in the DOM. When the Emscripten build
+   * exposes `specialHTMLTargets`, the element is registered there directly, so it
+   * needs neither an `id` nor to be attached to the document; otherwise the
+   * element must have an `id` so a CSS selector can be used as a fallback.
    *
    * @param {int} renderWindowId
-   * @param {string} canvasId - the `id` attribute of the user's `<canvas>`.
-   * @returns {string} the canvas selector string
+   * @param {HTMLCanvasElement|string} canvasOrId - the canvas element or its DOM `id`.
+   * @returns {string} the native event-target string (see {@link RemoteSession#getCanvasTarget}).
    */
-  bindCanvas(renderWindowId, canvasId) {
-    this.canvasIds.set(Number(renderWindowId), canvasId);
-    const canvasSelector = this.getCanvasSelector(renderWindowId);
-    const canvas = document.querySelector(canvasSelector);
-    if (canvas) {
-      addCanvasEventListeners(canvas);
+  bindCanvas(renderWindowId, canvasOrId) {
+    const rwId = Number(renderWindowId);
+    const canvas =
+      typeof canvasOrId === "string"
+        ? document.getElementById(canvasOrId)
+        : canvasOrId;
+    if (!canvas) {
+      throw new Error(
+        `bindCanvas: no canvas found for render window ${renderWindowId}.`,
+      );
     }
-    return canvasSelector;
+
+    let target;
+    const specialHTMLTargets = this.#module?.specialHTMLTargets;
+    if (specialHTMLTargets) {
+      // Register the element directly; the canvas needs no id and need not be
+      // attached to the document.
+      target = `!vtk-canvas-${rwId}`;
+      specialHTMLTargets[target] = canvas;
+    } else if (canvas.id) {
+      // Fallback: resolve via CSS selector at bind time inside Emscripten.
+      target = `#${canvas.id}`;
+    } else {
+      throw new Error(
+        `bindCanvas: this build does not expose specialHTMLTargets, so the ` +
+          `canvas for render window ${renderWindowId} must have an 'id'.`,
+      );
+    }
+
+    this.canvasTargets.set(rwId, { canvas, target });
+    addCanvasEventListeners(canvas);
+    return target;
   }
 
   /**
@@ -415,15 +455,21 @@ export class RemoteSession {
    * @param {int} renderWindowId
    */
   unbindCanvas(renderWindowId) {
-    const canvasId = this.canvasIds.get(Number(renderWindowId));
-    if (!canvasId) {
+    const rwId = Number(renderWindowId);
+    const entry = this.canvasTargets.get(rwId);
+    if (!entry) {
       return;
     }
-    const canvas = document.getElementById(canvasId);
-    if (canvas) {
-      removeCanvasEventListeners(canvas);
+    removeCanvasEventListeners(entry.canvas);
+    if (this.boundRenderWindows.has(rwId)) {
+      this.#native.bindRenderWindow(rwId, "");
+      this.boundRenderWindows.delete(rwId);
     }
-    this.canvasIds.delete(Number(renderWindowId));
+    const specialHTMLTargets = this.#module?.specialHTMLTargets;
+    if (specialHTMLTargets) {
+      delete specialHTMLTargets[entry.target];
+    }
+    this.canvasTargets.delete(rwId);
   }
 
   /**
@@ -433,18 +479,19 @@ export class RemoteSession {
    * @param {int} width
    * @param {int} height
    */
-  async setSize(renderWindowId, width, height) {
-    this.renderWindowSizes[renderWindowId] = [width, height];
-    if (!this.canvasIds.has(Number(renderWindowId))) {
-      return;
-    }
-    const canvas = document.querySelector(this.getCanvasSelector(renderWindowId));
-    if (canvas) {
-      canvas.width = width;
-      canvas.height = height;
+  async setSize(renderWindowId, width, height)  {
+    const rwId = Number(renderWindowId);
+    this.renderWindowSizes[rwId] = [width, height];
 
-      this.#native.setSize(renderWindowId, width, height);
-      await this.#native.render(renderWindowId);
+    const entry = this.canvasTargets.get(rwId);
+    if (entry?.canvas) {
+      entry.canvas.width = width;
+      entry.canvas.height = height;
+    }
+
+    if (this.boundRenderWindows.has(rwId)) {  // RW exists in C++
+      this.#native.setSize(rwId, width, height);
+      await this.#native.render(rwId);
     }
   }
 
@@ -478,17 +525,22 @@ export class RemoteSession {
     this.#disposed = true;
     this.progressCallbacks.clear();
     this.#idToRef.clear();
-    this.canvasIds.forEach((canvasId) => {
-      const canvas = document.getElementById(canvasId);
-      if (canvas) {
-        removeCanvasEventListeners(canvas);
+    const specialHTMLTargets = this.#module?.specialHTMLTargets;
+    this.canvasTargets.forEach(({ canvas, target }) => {
+      removeCanvasEventListeners(canvas);
+      if (specialHTMLTargets) {
+        delete specialHTMLTargets[target];
       }
     });
-    this.canvasIds.clear();
+    this.canvasTargets.clear();
+    // The native session is destroyed below, so no need to unbind render
+    // windows individually; just drop our bookkeeping.
+    this.boundRenderWindows.clear();
     if (typeof this.#native?.delete === "function") {
       this.#native.delete();
     }
     this.#native = null;
+    this.#module = null;
   }
 
   [Symbol.dispose]() {

@@ -15,29 +15,167 @@ const remote = runtime.createRemoteSession();
 
 ## Wire up the network
 
-A remote session does not know how to reach your server. You provide three fetchers through [`bindNetwork`](/api/@kitware/vtk-wasm/classes/RemoteSession#bindnetwork): one to fetch an object's state, one to fetch a blob by hash, and one to fetch the server's status (what changed since last time).
+A remote session does not know how to reach your server. You supply three async fetchers through [`bindNetwork`](/api/@kitware/vtk-wasm/classes/RemoteSession#bindnetwork) — one for state, one for blobs, one for status — and the session calls them whenever it needs data:
 
 ```js
 remote.bindNetwork(fetchState, fetchHash, fetchStatus);
 ```
 
+Each fetcher wraps one server RPC. The trame server side lives in [protocol.py](https://github.com/Kitware/trame-vtklocal/blob/master/src/trame_vtklocal/module/protocol.py); a typical client implementation just forwards the arguments over your transport (e.g. `session.call("vtklocal.get.state", [vtkId])`).
+
+- **`fetchState(vtkId) => Promise<string>`** — given an object id, return that object's serialized **state** as a JSON string (the wire format). Backs `vtklocal.get.state`.
+
+- **`fetchHash(hash) => Promise<Uint8Array>`** — given a content hash, return the corresponding binary **blob**. The transport may hand you a `Blob` or a `TypedArray`, so convert the result to a `Uint8Array` before returning. Backs `vtklocal.get.hash`.
+
+- **`fetchStatus(renderWindowId) => Promise<Status>`** — given a render window id, return a manifest of **what exists and what changed since last time**, so the session knows what to pull on the next [`update`](#drive-updates). Backs `vtklocal.get.status`. The returned object carries:
+  - `ids` — `[id, mtime]` pairs for every object reachable from the render window
+  - `hashes` — content hashes of the blobs those objects reference
+  - `cameras` — ids of the active cameras; `force_push` and `ignore_ids` select which to push to the server or leave alone (e.g. to keep the client's local camera)
+  - `interactor` — the interactor id for the render window
+
+## Hydrate a scene
+
+The example below stands in for a server with a handful of **canned object states**: a render window that owns a renderer whose `Background` is gray. The three fetchers read from that in-memory scene exactly as they would read from the wire, so the session hydrates and renders without any backend.
+
+The state objects mirror what `vtklocal.get.state` returns: each carries an `Id`, a `ClassName`, its `SuperClassNames`, and the properties to apply. References to other objects are `{ "Id": n }`, and `fetchStatus` advertises every object so the session knows what to pull on the first [`update`](#drive-updates). This scene has no binary data, so `fetchHash` is never called.
+
+<Playground display-i-frame>
+    <textarea data-lang="html" style="display:none"><!doctype html>
+<html lang="en">
+  <head>
+    <style>
+      html, body { margin: 0; padding: 0; overflow: hidden; }
+    </style>
+  </head>
+  <body>
+    <div style="position: absolute; width: 100%; height: 100%;">
+      <div id="container">
+      </div>
+    </div>
+  </body>
+</html></textarea>
+    <pre data-lang="js" style="display:none">import { loadVtkWasm } from "/vtk-wasm/data/esm/index.mjs";
+const runtime = await loadVtkWasm({
+  url: "https://gitlab.kitware.com/api/v4/projects/13/packages/generic/vtk-wasm32-emscripten/9.6.20260228/vtk-9.6.20260228-wasm32-emscripten.tar.gz",
+});
+const remote = runtime.createRemoteSession();
+// The "server": 
+// a render window (1)
+//  -> interactor (2)
+//  -> renderer collection (3)
+//     -> renderer (4) with a gray background
+//        -> a prop collection (5)
+//        -> a vtkTextActor (6)
+//           -> a vtkTextProperty (7)
+const RENDER_WINDOW_ID = 1;
+const SCENE = {
+  1: {
+    ClassName: "vtkRenderWindow",
+    SuperClassNames: ["vtkObjectBase", "vtkObject", "vtkWindow"],
+    Id: 1, MTime: 10,
+    Interactor: { Id: 2 },
+    NumberOfLayers: 1,
+    Renderers: { Id: 3 },
+    "vtk-object-manager-kept-alive": true,
+  },
+  2: {
+    ClassName: "vtkRenderWindowInteractor",
+    SuperClassNames: ["vtkObjectBase", "vtkObject"],
+    Id: 2, MTime: 10,
+    RenderWindow: { Id: 1 },
+  },  
+  3: {
+    ClassName: "vtkRendererCollection",
+    SuperClassNames: ["vtkObjectBase", "vtkObject", "vtkCollection"],
+    Id: 3, MTime: 10,
+    Items: [{ Id: 4 }],
+  },
+  4: {
+    ClassName: "vtkRenderer",
+    SuperClassNames: ["vtkObjectBase", "vtkObject", "vtkViewport"],
+    Id: 4, MTime: 10,
+    Background: [0.2, 0.2, 0.2], // gray
+    RenderWindow: { Id: 1 },
+    ViewProps: { Id: 5 },
+  },
+  5: {
+    ClassName: "vtkPropCollection",
+    SuperClassNames: ["vtkObjectBase", "vtkObject", "vtkCollection"],
+    Id: 5, MTime: 10,
+    Items: [{ Id: 6 },],
+  },
+  6: {
+    ClassName: "vtkTextActor",
+    SuperClassNames: ["vtkObjectBase", "vtkObject",
+        "vtkProp", "vtkActor2D", "vtkTexturedActor2D"],
+    Id: 6, MTime: 10,
+    Input: "Hello VTK.wasm RemoteSession",
+    DisplayPosition: [20, 20],
+    TextProperty: { Id: 7 },
+  },
+  7: {
+    ClassName: "vtkTextProperty",
+    SuperClassNames: ["vtkObjectBase", "vtkObject"],
+    Id: 7, MTime: 10,
+    FontSize: 36,
+  }
+};
+// One object's serialized state, as a JSON string (the wire format).
+async function fetchState(vtkId) {
+  return JSON.stringify(SCENE[vtkId]);
+}
+// A binary blob by hash. This scene has none, so this is never called.
+async function fetchHash(hash) {
+  return new Uint8Array();
+}
+// What exists and what changed since last time.
+async function fetchStatus(vtkId) {
+  return {
+    ids: Object.values(SCENE).map((s) => [s.Id, s.MTime]),
+    hashes: [],
+    cameras: [],
+    force_push: [],
+    ignore_ids: [],
+  };
+}
+remote.bindNetwork(fetchState, fetchHash, fetchStatus);
+// Own the canvas, size it, then pull the scene in and render it.
+const container = document.getElementById("container");
+const canvas = document.createElement("canvas");
+canvas.tabindex = -1;
+container.appendChild(canvas);
+remote.bindCanvas(RENDER_WINDOW_ID, canvas);
+const resizeObserver = new ResizeObserver((entries) => {
+  // Content box already in device pixels — no devicePixelRatio math needed.
+  const { inlineSize, blockSize } = entries[0].devicePixelContentBoxSize[0];
+  remote.setSize(RENDER_WINDOW_ID, inlineSize, blockSize);
+});
+resizeObserver.observe(container);
+await remote.update(RENDER_WINDOW_ID);
+    </pre>
+</Playground>
+
 ## Bring your own canvas
 
-The session never creates, moves, or removes canvas elements — you own them. Create a `<canvas>` with an `id`, add it to the DOM, then associate it with a render window via [`bindCanvas`](/api/@kitware/vtk-wasm/classes/RemoteSession#bindcanvas):
+The session never creates, moves, or removes canvas elements — you own them. Create a `<canvas>` and associate it with a render window via [`bindCanvas`](/api/@kitware/vtk-wasm/classes/RemoteSession#bindcanvas), passing either the element itself or the `id` of one already in the DOM:
 
 ```js
-remote.bindCanvas(renderWindowId, "my-canvas");      // install interaction listeners
-remote.setSize(renderWindowId, 800, 600);            // size the canvas + render window
+const canvas = document.createElement("canvas");
+remote.bindCanvas(renderWindowId, canvas);           // pass the element directly…
+// remote.bindCanvas(renderWindowId, "my-canvas");   // …or the id of a canvas in the DOM
+remote.setSize(renderWindowId, 800, 600);       // size the canvas + render window
 ```
 
-When the canvas goes away, [`unbindCanvas`](/api/@kitware/vtk-wasm/classes/RemoteSession#unbindcanvas) removes the listeners and forgets the mapping, leaving the element itself untouched.
+Passing the element directly registers it with Emscripten's `specialHTMLTargets`, so the canvas needs neither an `id` nor to be attached to the document — handy for off-screen or framework-managed canvases. (On builds that don't expose `specialHTMLTargets`, the canvas must have an `id` so a CSS selector can be used instead.)
+
+When the canvas goes away, [`unbindCanvas`](/api/@kitware/vtk-wasm/classes/RemoteSession#unbindcanvas) removes the listeners, unregisters the target, and forgets the mapping, leaving the element itself untouched.
 
 ## Drive updates
 
-Call [`update`](/api/@kitware/vtk-wasm/classes/RemoteSession#update) to pull the latest server state for a render window and render it. Pass `bindCanvas: true` the first time so the render window is connected to its canvas:
+Call [`update`](/api/@kitware/vtk-wasm/classes/RemoteSession#update) to pull the latest server state for a render window and render it.
 
 ```js
-await remote.update(renderWindowId, /* bindCanvas */ true);
+await remote.update(renderWindowId);
 ```
 
 To surface download progress (state + blob counts), register a callback with [`addProgressCallback`](/api/@kitware/vtk-wasm/classes/RemoteSession#addprogresscallback); it returns a function that removes the callback.
