@@ -7,7 +7,7 @@ import { MODULE_JS_FILE_EXTENSION, WASM_FILE_EXTENSION } from "./constants.js";
  * @param {string} url 
  * @returns {Promise<ArrayBuffer>} The decompressed tar archive contents from the gzip bundle.
  */
-export async function fetchGzipBundle(url) {
+export async function fetchGzipBundleAsync(url) {
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Could not fetch gzip bundle from ${url} - response status: ${response.status}`);
@@ -35,7 +35,7 @@ export async function fetchGzipBundle(url) {
  * @param {string} wasmBaseName 
  * @returns {Promise<{js: {name: string, buffer: ArrayBufferLike}, wasm: {name: string, buffer: ArrayBufferLike}}>}
  */
-export async function extractFilesFromGzipBundle(contents, config, wasmBaseName) {
+export async function extractFilesFromGzipBundleAsync(contents, config, wasmBaseName) {
   const files = await untar(contents);
   const execModeSuffix = config?.exec === "async" ? "Async" : "";
   const jsFileMatch = `${wasmBaseName}WebAssembly${execModeSuffix}${MODULE_JS_FILE_EXTENSION}`;

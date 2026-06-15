@@ -1,7 +1,7 @@
-import { extractFilesFromGzipBundle, fetchGzipBundle } from "./core/gzipBundle";
+import { extractFilesFromGzipBundleAsync, fetchGzipBundleAsync } from "./core/gzipBundle";
 import { createEmscriptenConfig, normalizeConfig, validateConfig } from "./core/configManager";
 import { DEFAULT_CONFIG, DEFAULT_WASM_BASE_NAME, DEFAULT_WASM_URL_IS_GZIP, MIME_TYPES } from "./core/constants";
-import { createScriptURL, loadWebAssemblyModuleFromExistingScript, loadWebAssemblyModuleFromScript } from "./core/scriptLoader";
+import { createScriptURLAsync, loadWebAssemblyModuleFromExistingScriptAsync, loadWebAssemblyModuleFromScriptAsync } from "./core/scriptLoader";
 import { createBlobURL, disposeBlobURL } from "./core/blobURL";
 import { StandaloneSession } from "./standaloneSession";
 import { RemoteSession } from "./remoteSession";
@@ -47,36 +47,36 @@ function exposeSpecialHTMLTargets(buffer) {
  * Returns the wasm binary descriptor when it had to be extracted from a gzip
  * bundle (so it can be handed to Emscripten), otherwise null.
  */
-async function prepareModuleFactory(url, urlIsGzip, wasmBaseName, config) {
+async function prepareModuleFactoryAsync(url, urlIsGzip, wasmBaseName, config) {
   if (!window.createVTKWASM) {
-    await loadWebAssemblyModuleFromExistingScript(wasmBaseName);
+    await loadWebAssemblyModuleFromExistingScriptAsync(wasmBaseName);
   }
   if (window.createVTKWASM) {
     return null;
   }
 
   if (urlIsGzip) {
-    const gzipArrayBuffer = await fetchGzipBundle(url);
-    const { js, wasm } = await extractFilesFromGzipBundle(gzipArrayBuffer, config, wasmBaseName);
+    const gzipArrayBuffer = await fetchGzipBundleAsync(url);
+    const { js, wasm } = await extractFilesFromGzipBundleAsync(gzipArrayBuffer, config, wasmBaseName);
     const javaScriptBlobURL = createBlobURL(exposeSpecialHTMLTargets(js.buffer), MIME_TYPES.JAVASCRIPT);
     try {
-      await loadWebAssemblyModuleFromScript(javaScriptBlobURL);
+      await loadWebAssemblyModuleFromScriptAsync(javaScriptBlobURL);
     } finally {
       disposeBlobURL(javaScriptBlobURL);
     }
     return wasm;
   }
 
-  const scriptURL = await createScriptURL(url, wasmBaseName, config);
+  const scriptURL = await createScriptURLAsync(url, wasmBaseName, config);
   if (scriptURL !== null) {
-    await loadWebAssemblyModuleFromScript(scriptURL);
+    await loadWebAssemblyModuleFromScriptAsync(scriptURL);
   }
   return null;
 }
 
-async function instantiate(url, urlIsGzip, wasmBaseName, config, key) {
+async function instantiateAsync(url, urlIsGzip, wasmBaseName, config, key) {
   try {
-    const wasmFile = await prepareModuleFactory(url, urlIsGzip, wasmBaseName, config);
+    const wasmFile = await prepareModuleFactoryAsync(url, urlIsGzip, wasmBaseName, config);
     if (!window.createVTKWASM) {
       throw new Error(
         [
@@ -121,7 +121,7 @@ async function instantiate(url, urlIsGzip, wasmBaseName, config, key) {
  * @param {Function} [options.printErr] - std::cerr sink.
  * @returns {Promise<VtkWasmRuntime>}
  */
-export async function loadVtkWasm(options = {}) {
+export async function loadVtkWasmAsync(options = {}) {
   const {
     url = "loaded-module",
     urlIsGzip = DEFAULT_WASM_URL_IS_GZIP,
@@ -136,7 +136,7 @@ export async function loadVtkWasm(options = {}) {
     return RUNTIME_CACHE.get(key);
   }
   if (!RUNTIME_PROMISES.has(key)) {
-    RUNTIME_PROMISES.set(key, instantiate(url, urlIsGzip, wasmBaseName, config, key));
+    RUNTIME_PROMISES.set(key, instantiateAsync(url, urlIsGzip, wasmBaseName, config, key));
   }
   return RUNTIME_PROMISES.get(key);
 }

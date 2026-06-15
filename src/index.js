@@ -5,11 +5,11 @@
  * @module @kitware/vtk-wasm
  */
 import { createFuture } from "./core/future";
-import { loadVtkWasm, VtkWasmRuntime } from "./runtime";
+import { loadVtkWasmAsync, VtkWasmRuntime } from "./runtime";
 import { StandaloneSession } from "./standaloneSession";
 import { RemoteSession } from "./remoteSession";
 
-export { loadVtkWasm, VtkWasmRuntime, StandaloneSession, RemoteSession };
+export { loadVtkWasmAsync, VtkWasmRuntime, StandaloneSession, RemoteSession };
 
 /**
  * If the script is tagged with id="vtk-wasm", a global "vtk" namespace
@@ -29,7 +29,7 @@ if (typeof window !== "undefined") {
     const url = script.dataset.url || ".";
     const config = JSON.parse(script.dataset.config || "{}");
     window.vtkReady = promise;
-    loadVtkWasm({ url, ...config })
+    loadVtkWasmAsync({ url, ...config })
       .then((runtime) => {
         const session = runtime.createStandaloneSession();
         window.vtkSession = session;

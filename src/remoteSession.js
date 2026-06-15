@@ -159,7 +159,7 @@ export class RemoteSession {
    * @param {int} vtkId
    * @returns fetched state as string
    */
-  async fetchState(vtkId) {
+  async fetchStateAsync(vtkId) {
     const serverState = await this.networkFetchState(vtkId);
     const patchedState = this.patchState(serverState);
     this.incrementProgress("state");
@@ -186,9 +186,9 @@ export class RemoteSession {
    * @param {str} hash
    * @returns typed array matching blob content
    */
-  async fetchHash(hash) {
+  async fetchHashAsync(hash) {
     let array;
-    // pendingArray only filled via pushHash
+    // pendingArray only filled via pushHashAsync
     if (this.pendingArrays[hash]) {
       await this.pendingArrays[hash];
       this.hashesMTime[hash] = this.currentMTime;
@@ -208,7 +208,7 @@ export class RemoteSession {
    * @param {str} hash
    * @param {TypedArry or Blob} arrayOrBlob
    */
-  pushHash(hash, arrayOrBlob) {
+  pushHashAsync(hash, arrayOrBlob) {
     this.pendingArrays[hash] = new Promise((resolve) => {
       if (arrayOrBlob.arrayBuffer) {
         arrayOrBlob.arrayBuffer().then((buffer) => {
@@ -230,7 +230,7 @@ export class RemoteSession {
    *
    * @param {int} vtkId
    */
-  async update(vtkId) {
+  async updateAsync(vtkId) {
     this.updateInProgress++;
     if (this.updateInProgress !== 1) {
       // console.error("Skip concurrent update");
@@ -270,9 +270,9 @@ export class RemoteSession {
       };
       this.emitProgress();
       const pendingStates = statesToFetch.map((stateId) =>
-        this.fetchState(stateId),
+        this.fetchStateAsync(stateId),
       );
-      const pendingHashes = hashesToFetch.map((hash) => this.fetchHash(hash));
+      const pendingHashes = hashesToFetch.map((hash) => this.fetchHashAsync(hash));
 
       // Capture cameras
       serverStatus.cameras.forEach((v) => this.cameraIds.add(Number(v)));
@@ -330,7 +330,7 @@ export class RemoteSession {
       this.updateInProgress--;
       if (this.updateInProgress) {
         this.updateInProgress = 0;
-        await this.update(vtkId);
+        await this.updateAsync(vtkId);
       }
     }
   }
@@ -479,7 +479,7 @@ export class RemoteSession {
    * @param {int} width
    * @param {int} height
    */
-  async setSize(renderWindowId, width, height)  {
+  async setSizeAsync(renderWindowId, width, height)  {
     const rwId = Number(renderWindowId);
     this.renderWindowSizes[rwId] = [width, height];
 

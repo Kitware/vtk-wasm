@@ -6,7 +6,7 @@ The code snippet available below show you how you can embed a static 3D scene in
 
 <<< ../../public/demo/viewer-basic.html
 
-The `createViewer` method give you the opportunity to fill a DOM element using a selector and the path of the data to load. Additionally, you can provide the path to the WASM library to load unless it is imported as a script. Finally, you can configure your running by setting the rendering backend and execution mode.
+The `createViewerAsync` method give you the opportunity to fill a DOM element using a selector and the path of the data to load. Additionally, you can provide the path to the WASM library to load unless it is imported as a script. Finally, you can configure your running by setting the rendering backend and execution mode.
 
 Below is the result of the code above.
 

@@ -13,7 +13,7 @@ const PROMISES = {};
  * @param {string} wasmBaseName 
  * @returns {Promise<void>}
  */
-export function loadWebAssemblyModuleFromExistingScript(wasmBaseName) {
+export function loadWebAssemblyModuleFromExistingScriptAsync(wasmBaseName) {
   if (window.createVTKWASM) {
     return Promise.resolve();
   }
@@ -45,7 +45,7 @@ export function loadWebAssemblyModuleFromExistingScript(wasmBaseName) {
  * @param {string} url a URL to the wasm module JavaScript file
  * @return {Promise<void>} to know when the script is ready
  */
-export function loadWebAssemblyModuleFromScript(url) {
+export function loadWebAssemblyModuleFromScriptAsync(url) {
   if (PROMISES[url]) {
     return PROMISES[url];
   }
@@ -82,7 +82,7 @@ export function loadWebAssemblyModuleFromScript(url) {
  * @param {object} config Configuration object
  * @returns {Promise<string>} URL of the wasm module JavaScript file
  */
-export async function createScriptURL(wasmBaseURL, wasmBaseName, config) {
+export async function createScriptURLAsync(wasmBaseURL, wasmBaseName, config) {
   const execModeSuffix = config?.exec === "async" ? "Async" : "";
   const filename = `${wasmBaseName}WebAssembly${execModeSuffix}${MODULE_JS_FILE_EXTENSION}`;
   const url = `${wasmBaseURL}/${filename}`;
