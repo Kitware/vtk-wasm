@@ -67,8 +67,8 @@ export class ExportViewer {
     );
     this.container.appendChild(canvas);
 
-    const selector = this.remoting.bindCanvas(rwId, canvas.id);
-    this.remoting.native.bindRenderWindow(rwId, selector);
+    const target = this.remoting.bindCanvas(rwId, canvas);
+    this.remoting.native.bindRenderWindow(rwId, target);
     this.remoting.native.startEventLoop(rwId);
   }
 }
