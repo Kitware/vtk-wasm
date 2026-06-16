@@ -25,7 +25,7 @@ const cone = vtk.vtkConeSource();
 // ... build and render your scene
 ```
 
-No build step? Load the UMD bundle from a CDN and use the global `vtkWASM`:
+No build step? Load the UMD bundle from a CDN and use the global `vtkwasm`:
 
 ```html
 <script src="https://unpkg.com/@kitware/vtk-wasm/vtk-umd.js"></script>

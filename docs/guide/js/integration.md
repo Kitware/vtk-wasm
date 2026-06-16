@@ -37,7 +37,7 @@ Since we didn't pre-load the WASM module here, we provide the URL where the WASM
 
 ### Defer WASM loading with annotation
 
-Here we tag the script to autoload WASM directly from the VTK repository's package registry and create a global `vtk` namespace. You can customize the wasm architecture and version by changing the `data-url`.
+Here we tag the script to autoload WASM directly from the VTK repository's package registry; the VTK namespace is then reached by awaiting `vtkwasm.ready`. You can customize the wasm architecture and version by changing the `data-url`.
 
 ::: code-group
 <<< ../../public/demo/plain-javascript-annotation-wasm-registry.html

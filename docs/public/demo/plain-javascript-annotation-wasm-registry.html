@@ -10,8 +10,8 @@
   <body>
     <canvas id="vtk-wasm-window" tabindex="-1" onclick="focus()"></canvas>
     <script>
-      vtkReady.then((vtk) => {
-        buildWASMScene(vtk,"This scene points the data-url in script tag to the VTK.wasm bundle from GitLab registry"); // Also available on window.vtk
+      vtkwasm.ready.then((vtk) => {
+        buildWASMScene(vtk,"This scene points the data-url in script tag to the VTK.wasm bundle from GitLab registry");
       });
     </script>
   </body>

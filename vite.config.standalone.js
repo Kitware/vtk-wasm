@@ -4,7 +4,7 @@ export default {
     lib: {
       entry: "src/index.js",
       formats: ["umd"],
-      name: "vtkWASM",
+      name: "vtkwasm",
       fileName: "vtk",
     },
     assetsDir: ".",
