@@ -21,7 +21,7 @@ Start by instantiating the class you need from the `vtk` namespace.
     <body>
     </body>
 </html></textarea>
-    <pre data-lang="js" style="display:none">const vtk = await window.vtkReady;
+    <pre data-lang="js" style="display:none">const vtk = await vtkwasm.ready;
 const camera = vtk.vtkCamera();
 console.log("Created a camera: ", camera.toString());</pre>
 </Playground>
@@ -43,7 +43,7 @@ Once you have an object, inspection usually comes next. Use `toString()` to invo
     <body>
     </body>
 </html></textarea>
-    <pre data-lang="js" style="display:none">const vtk = await window.vtkReady;
+    <pre data-lang="js" style="display:none">const vtk = await vtkwasm.ready;
 const camera = vtk.vtkCamera();
 // directly calls C++ vtkObject::Print()
 console.log(camera.toString());
@@ -92,7 +92,7 @@ Object properties can be read and assigned with standard `.` notation.
     <body>
     </body>
 </html></textarea>
-    <pre data-lang="js" style="display:none">const vtk = await window.vtkReady;
+    <pre data-lang="js" style="display:none">const vtk = await vtkwasm.ready;
 const camera = vtk.vtkCamera();
 console.log("Initial position: ", camera.position);
 camera.position = [10, 20, 30];
@@ -116,7 +116,7 @@ Member functions are also accessed with `.` notation. These calls return `Promis
     <body>
     </body>
 </html></textarea>
-    <pre data-lang="js" style="display:none">const vtk = await window.vtkReady;
+    <pre data-lang="js" style="display:none">const vtk = await vtkwasm.ready;
 const camera = vtk.vtkCamera();
 await camera.azimuth(10.0);
 console.log("New position after azimuth: ", camera.position);
@@ -144,7 +144,7 @@ The same object model extends to method arguments. When an API expects another V
     <body>
     </body>
 </html></textarea>
-    <pre data-lang="js" style="display:none">const vtk = await window.vtkReady;
+    <pre data-lang="js" style="display:none">const vtk = await vtkwasm.ready;
 const camera = vtk.vtkCamera();
 camera.position = [10, 20, 30];
 const renderer = vtk.vtkRenderer();
@@ -172,7 +172,7 @@ When an object is no longer needed, call `delete()` to release its external Java
     </body>
 </html></textarea>
 <pre data-lang="js" style="display:none">
-const vtk = await window.vtkReady;
+const vtk = await vtkwasm.ready;
 let actor = vtk.vtkActor();
 actor.delete();
 // console.log(actor.toString()) // prints (null)
@@ -198,7 +198,7 @@ VTK provides array classes for typed data exchange. These arrays accept JavaScri
     </body>
 </html></textarea>
 <pre data-lang="js" style="display:none">
-const vtk = await window.vtkReady;
+const vtk = await vtkwasm.ready;
 const coordinates = vtk.vtkTypeFloat64Array();
 coordinates.number_of_components = 3;
 await coordinates.SetArray(new Float64Array([-1, -1, 0, 1, -1, 0]));
@@ -224,7 +224,7 @@ In addition to VTK-managed state, you can attach custom JavaScript properties to
     </body>
 </html></textarea>
 <pre data-lang="js" style="display:none">
-const vtk = await window.vtkReady;
+const vtk = await vtkwasm.ready;
 const actor = vtk.vtkActor();
 actor.partName = "Body-1";
 console.log(`Part name: ${actor.partName}`);
@@ -249,7 +249,7 @@ For interactive workflows, register event handlers with `observe()`. Remove a ha
     </body>
 </html></textarea>
 <pre data-lang="js" style="display:none">
-const vtk = await window.vtkReady;
+const vtk = await vtkwasm.ready;
 const actor = vtk.vtkActor();
 const tag = actor.observe('ModifiedEvent', () => { console.log("Actor modified"); });
 actor.visibility = false;
@@ -292,7 +292,7 @@ Create a canvas in your HTML and ensure that you assign the `id` of the canvas t
   </body>
 </html></textarea>
 <pre data-lang="js" style="display:none">
-const vtk = await window.vtkReady;
+const vtk = await vtkwasm.ready;
 const mesh = vtk.vtkPartitionedDataSetCollectionSource({
     numberOfShapes: 1
 });

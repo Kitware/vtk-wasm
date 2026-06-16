@@ -4,7 +4,7 @@ Everything starts with a single call: [`loadVtkWasmAsync(options)`](/api/@kitwar
 
 ```mermaid
 flowchart TD
-    ST["HTML script tag (global vtkWASM)"]
+    ST["HTML script tag (global vtkwasm)"]
     BD["Bundler import"]
     AN["Annotation script tag"]
 
@@ -35,7 +35,7 @@ const runtime = await loadVtkWasmAsync({
 
 First you need `loadVtkWasmAsync` on the page. Pick whichever fits your setup (see [Adding VTK.wasm to a Project](./integration.md)):
 
-- [HTML Script Tag](./integration.md#html-script-tag) — no build step; `loadVtkWasmAsync` lives on the global `vtkWASM` object.
+- [HTML Script Tag](./integration.md#html-script-tag) — no build step; `loadVtkWasmAsync` lives on the global `vtkwasm` object.
 - [Bundler](./integration.md#bundler) — `import { loadVtkWasmAsync } from "@kitware/vtk-wasm"`.
 
 For the complete, generated list of exported functions and classes, see the [API Reference](/api/).

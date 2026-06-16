@@ -17,7 +17,7 @@ const vtk = session.vtk; // the namespace
 
 [`session.vtk`](/api/@kitware/vtk-wasm/classes/StandaloneSession#vtk) is the single object you create everything from. Calling `vtk.vtkActor({ ... })` instantiates the corresponding C++ class and returns a proxy you drive with plain JavaScript.
 
-The interaction patterns — creating objects, reading and writing properties, calling methods, observers, and rendering to a `<canvas>` — are covered in the [Primer on VTK.wasm](./primer.md). The primer reaches the namespace through the annotation shortcut (`window.vtkReady`); `session.vtk` is the exact same namespace obtained explicitly.
+The interaction patterns — creating objects, reading and writing properties, calling methods, observers, and rendering to a `<canvas>` — are covered in the [Primer on VTK.wasm](./primer.md). The primer reaches the namespace through the annotation shortcut (`vtkwasm.ready`); `session.vtk` is the exact same namespace obtained explicitly.
 
 ## Cleaning up
 
