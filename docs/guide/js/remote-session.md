@@ -46,6 +46,7 @@ The state objects mirror what `vtklocal.get.state` returns: each carries an `Id`
     <style>
       html, body { margin: 0; padding: 0; overflow: hidden; }
     </style>
+    <script src="https://unpkg.com/@kitware/vtk-wasm/vtk-umd.js"></script>
   </head>
   <body>
     <div style="position: absolute; width: 100%; height: 100%;">
@@ -54,8 +55,8 @@ The state objects mirror what `vtklocal.get.state` returns: each carries an `Id`
     </div>
   </body>
 </html></textarea>
-    <pre data-lang="js" style="display:none">import { loadAsync } from "/vtk-wasm/data/esm/index.mjs";
-const runtime = await loadAsync({
+    <pre data-lang="js" style="display:none">
+const runtime = await vtkwasm.loadAsync({
   url: "https://gitlab.kitware.com/api/v4/projects/13/packages/generic/vtk-wasm32-emscripten/9.6.20260228/vtk-9.6.20260228-wasm32-emscripten.tar.gz",
 });
 const remote = runtime.createRemoteSession();
