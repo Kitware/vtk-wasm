@@ -4,11 +4,11 @@
  *
  * @module @kitware/vtk-wasm
  */
-import { loadVtkWasmAsync, VtkWasmRuntime } from "./runtime";
+import { loadAsync, VtkWasmRuntime } from "./runtime";
 import { StandaloneSession } from "./standaloneSession";
 import { RemoteSession } from "./remoteSession";
 
-export { loadVtkWasmAsync, VtkWasmRuntime, StandaloneSession, RemoteSession };
+export { loadAsync, VtkWasmRuntime, StandaloneSession, RemoteSession };
 
 /**
  * If the script is tagged with id="vtk-wasm", the runtime is loaded
@@ -29,7 +29,7 @@ if (typeof window !== "undefined") {
   if (script) {
     const url = script.dataset.url || ".";
     const config = JSON.parse(script.dataset.config || "{}");
-    ready = loadVtkWasmAsync({ url, ...config }).then(
+    ready = loadAsync({ url, ...config }).then(
       (runtime) => runtime.createStandaloneSession().vtk,
     );
   }

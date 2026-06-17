@@ -6,10 +6,10 @@
   <body>
     <canvas id="vtk-wasm-window" tabindex="-1" onclick="focus()"></canvas>
     <script>
-      vtkwasm.loadVtkWasmAsync({ url: "https://gitlab.kitware.com/api/v4/projects/13/packages/generic/vtk-wasm32-emscripten/9.5.20251215/vtk-9.5.20251215-wasm32-emscripten.tar.gz" })
+      vtkwasm.loadAsync({ url: "https://gitlab.kitware.com/api/v4/projects/13/packages/generic/vtk-wasm32-emscripten/9.5.20251215/vtk-9.5.20251215-wasm32-emscripten.tar.gz" })
       .then((runtime) => {
         const session = runtime.createStandaloneSession();
-        buildWASMScene(session.vtk, "This scene passes the VTK.wasm bundle from GitLab registry to loadVtkWasmAsync()");
+        buildWASMScene(session.vtk, "This scene passes the VTK.wasm bundle from GitLab registry to loadAsync()");
       });
     </script>
   </body>

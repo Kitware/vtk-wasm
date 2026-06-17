@@ -15,9 +15,9 @@ npm install @kitware/vtk-wasm
 Load the runtime, create a session, and use its `vtk` namespace:
 
 ```js
-import { loadVtkWasmAsync } from "@kitware/vtk-wasm";
+import { loadAsync } from "@kitware/vtk-wasm";
 
-const runtime = await loadVtkWasmAsync({ url: VTK_WASM_BUNDLE_URL });
+const runtime = await loadAsync({ url: VTK_WASM_BUNDLE_URL });
 const session = runtime.createStandaloneSession();
 const vtk = session.vtk;
 

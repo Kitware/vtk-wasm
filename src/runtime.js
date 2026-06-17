@@ -121,7 +121,7 @@ async function instantiateAsync(url, urlIsGzip, wasmBaseName, config, key) {
  * @param {Function} [options.printErr] - std::cerr sink.
  * @returns {Promise<VtkWasmRuntime>}
  */
-export async function loadVtkWasmAsync(options = {}) {
+export async function loadAsync(options = {}) {
   const {
     url = "loaded-module",
     urlIsGzip = DEFAULT_WASM_URL_IS_GZIP,
