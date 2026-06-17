@@ -7,9 +7,9 @@ Use a remote session when the data is large, generated server-side, or shared ac
 Create one from a [runtime](./loading.md):
 
 ```js
-import { loadVtkWasmAsync } from "@kitware/vtk-wasm";
+import { loadAsync } from "@kitware/vtk-wasm";
 
-const runtime = await loadVtkWasmAsync({ url: VTK_WASM_BUNDLE_URL });
+const runtime = await loadAsync({ url: VTK_WASM_BUNDLE_URL });
 const remote = runtime.createRemoteSession();
 ```
 
@@ -54,8 +54,8 @@ The state objects mirror what `vtklocal.get.state` returns: each carries an `Id`
     </div>
   </body>
 </html></textarea>
-    <pre data-lang="js" style="display:none">import { loadVtkWasmAsync } from "/vtk-wasm/data/esm/index.mjs";
-const runtime = await loadVtkWasmAsync({
+    <pre data-lang="js" style="display:none">import { loadAsync } from "/vtk-wasm/data/esm/index.mjs";
+const runtime = await loadAsync({
   url: "https://gitlab.kitware.com/api/v4/projects/13/packages/generic/vtk-wasm32-emscripten/9.6.20260228/vtk-9.6.20260228-wasm32-emscripten.tar.gz",
 });
 const remote = runtime.createRemoteSession();

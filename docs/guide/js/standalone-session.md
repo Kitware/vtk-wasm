@@ -5,9 +5,9 @@ A **standalone session** runs everything in the browser: you create VTK objects,
 Create one from a [runtime](./loading.md):
 
 ```js
-import { loadVtkWasmAsync } from "@kitware/vtk-wasm";
+import { loadAsync } from "@kitware/vtk-wasm";
 
-const runtime = await loadVtkWasmAsync({ url: VTK_WASM_BUNDLE_URL });
+const runtime = await loadAsync({ url: VTK_WASM_BUNDLE_URL });
 const session = runtime.createStandaloneSession();
 
 const vtk = session.vtk; // the namespace

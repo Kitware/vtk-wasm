@@ -5,7 +5,7 @@
  * @module @kitware/vtk-wasm/viewer
  */
 import JSZip from "jszip";
-import { loadVtkWasmAsync } from "./runtime";
+import { loadAsync } from "./runtime";
 import { createFuture } from "./core/future";
 
 export class ExportViewer {
@@ -79,7 +79,7 @@ export async function createViewerAsync(
   wasmURL,
   wasmConfig = {},
 ) {
-  const runtime = await loadVtkWasmAsync({ url: wasmURL || "loaded-module", ...wasmConfig });
+  const runtime = await loadAsync({ url: wasmURL || "loaded-module", ...wasmConfig });
   const remoting = runtime.createRemoteSession();
   const viewer = new ExportViewer(containerSelector, remoting);
   await viewer.loadAsync(dataURL);

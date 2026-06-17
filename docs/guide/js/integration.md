@@ -5,7 +5,7 @@ There are two ways to get VTK.wasm into a web project:
 - **HTML Script Tag** — load a prebuilt bundle from a CDN, no build step required. Best for quick prototypes, demos, and embedding into existing pages.
 - **Bundler** — install the `@kitware/vtk-wasm` package and `import` it. Best for application development with a tool like Vite.
 
-Either way you end up calling [`loadVtkWasmAsync`](./loading.md); only how it reaches the page differs.
+Either way you end up calling [`loadAsync`](./loading.md); only how it reaches the page differs.
 
 ## HTML Script Tag
 
@@ -48,7 +48,7 @@ Here we tag the script to autoload WASM directly from the VTK repository's packa
 
 [Full Screen Viewer](../../demo/plain-javascript-annotation-wasm-registry.html){target="_blank"}
 
-The `data-config` attribute on the annotation `<script>` accepts the same settings as the options object passed to `loadVtkWasmAsync(...)` — for example, add `data-config='{"rendering": "webgpu"}'` to switch the rendering backend. See [Loading VTK.wasm](./loading.md) for what each option does, or the [`loadVtkWasmAsync` reference](/api/@kitware/vtk-wasm/functions/loadVtkWasmAsync) for the exact option types.
+The `data-config` attribute on the annotation `<script>` accepts the same settings as the options object passed to `loadAsync(...)` — for example, add `data-config='{"rendering": "webgpu"}'` to switch the rendering backend. See [Loading VTK.wasm](./loading.md) for what each option does, or the [`loadAsync` reference](/api/@kitware/vtk-wasm/functions/loadAsync) for the exact option types.
 
 ## Bundler
 
