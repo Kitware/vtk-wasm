@@ -8,3 +8,4 @@ examples/cpp/vtk
 examples/cpp/*/build
 dist
 scripts/__pycache__
+.idea
