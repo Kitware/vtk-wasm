@@ -57,7 +57,7 @@ The state objects mirror what `vtklocal.get.state` returns: each carries an `Id`
 </html></textarea>
     <pre data-lang="js" style="display:none">
 const runtime = await vtkwasm.loadAsync({
-  url: "https://gitlab.kitware.com/api/v4/projects/13/packages/generic/vtk-wasm32-emscripten/9.6.20260228/vtk-9.6.20260228-wasm32-emscripten.tar.gz",
+  url: "https://gitlab.kitware.com/api/v4/projects/13/packages/generic/vtk-wasm32-emscripten/9.6.20260621/vtk-9.6.20260621-wasm32-emscripten.tar.gz",
 });
 const remote = runtime.createRemoteSession();
 // The "server": 
