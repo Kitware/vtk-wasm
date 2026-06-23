@@ -30,6 +30,13 @@ export class StandaloneSession {
   }
 
   /**
+   * @returns {boolean}
+   */
+  get disposed(){
+    return this.#disposed;
+  }
+
+  /**
    * Free the C++ session and all objects it owns, and drop proxy caches.
    * The session is unusable afterwards.
    */
