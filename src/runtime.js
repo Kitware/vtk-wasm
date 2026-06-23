@@ -154,6 +154,12 @@ export class VtkWasmRuntime {
     this.#key = key;
   }
 
+  /** The unique identifier for the wasm module that this runtime was created from.
+   *  Looks like: `url::wasmBaseName::config.rendering::config.exec` */
+  get id() {
+    return this.#key
+  }
+  
   /** The underlying Emscripten module. Escape hatch; prefer the session API. */
   get module() {
     return this.#module;
