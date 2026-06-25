@@ -520,6 +520,13 @@ export class RemoteSession {
   }
 
   /**
+   * @returns {boolean}
+   */
+  get disposed(){
+    return this.#disposed;
+  }
+
+  /**
    * Free the C++ session and detach the interaction listeners installed on the
    * user-provided canvases. The canvas elements themselves are left untouched.
    * The session is unusable afterwards.
