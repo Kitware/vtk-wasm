@@ -299,13 +299,19 @@ export class RemoteSession {
       // Bump local mtime and process states to reflect server state
       try {
         this.#native.updateObjectsFromStates();
-        const state = this.getVtkObject(vtkId).state;
-        const isRenderWindow =
-          state?.className === "vtkRenderWindow" ||
-          state?.superClassNames?.includes("vtkRenderWindow");
+        // Upstream's vtkObjectManager::UpdateObjectFromState
+        // discards ownership metadata such as the "vtk-object-manager-kept-alive"
+        // key. Until then, this code should not run. Instead, it relies
+        // upon consumers having called the bindCanvas(renderWindowId, canvasOrId) method.
+        // This issue is tracked in https://gitlab.kitware.com/vtk/vtk/-/work_items/20099
+        // const state = this.getVtkObject(vtkId).state;
+        // const isRenderWindow =
+        //   state?.className === "vtkRenderWindow" ||
+        //   state?.superClassNames?.includes("vtkRenderWindow");
+        const rwId = Number(vtkId);
+        const isRenderWindow = this.canvasTargets.has(rwId);
         if (isRenderWindow) {
-          const rwId = Number(vtkId);
-          if (this.canvasTargets.has(rwId) && !this.boundRenderWindows.has(rwId)) {
+          if (!this.boundRenderWindows.has(rwId)) {
             this.#native.bindRenderWindow(rwId, this.getCanvasTarget(rwId));
             this.boundRenderWindows.add(rwId);
           }
