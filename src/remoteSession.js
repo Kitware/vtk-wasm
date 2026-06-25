@@ -38,6 +38,7 @@ export class RemoteSession {
     this.progressState = null;
     this.renderWindowSizes = {};
     this.boundRenderWindows = new Set();
+    this.renderWindowIdsWithRunningEventLoops = new Set();
 
     // renderWindowId -> { canvas, target } where `canvas` is the user-provided
     // element and `target` is the string handed to native.bindRenderWindow
@@ -58,6 +59,21 @@ export class RemoteSession {
     return this.#native;
   }
 
+  /** Start event loop on the render window. */
+  startEventLoop(renderWindowId) {
+    if (this.#native.startEventLoop(renderWindowId)) {
+      this.renderWindowIdsWithRunningEventLoops.add(renderWindowId);
+      return true;
+    }
+    return false;
+  }
+
+  /** Stop event loop on the render window. */
+  stopEventLoop(renderWindowId) {
+    this.renderWindowIdsWithRunningEventLoops.delete(renderWindowId);
+    return this.#native.stopEventLoop(renderWindowId);
+  }
+  
   /**
    * Inject network implementation for fetching state and blob
    */
@@ -538,6 +554,10 @@ export class RemoteSession {
     this.#disposed = true;
     this.progressCallbacks.clear();
     this.#idToRef.clear();
+    this.renderWindowIdsWithRunningEventLoops.forEach((id) => {
+      this.#native.stopEventLoop(id);
+    });
+    this.renderWindowIdsWithRunningEventLoops.clear();
     const specialHTMLTargets = this.#module?.specialHTMLTargets;
     this.canvasTargets.forEach(({ canvas, target }) => {
       removeCanvasEventListeners(canvas);
