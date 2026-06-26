@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Mirror VTK.wasm gzip bundles from the GitLab generic package registry into a
-local directory laid out for hosting via jsDelivr / raw GitHub.
+local directory laid out for hosting via raw.githack.com / raw GitHub.
 
 The script is stdlib-only so the workflow needs no `pip install`.
 
@@ -34,7 +34,7 @@ GITLAB = "https://gitlab.kitware.com"
 PROJECT_ID = 13
 ARCHES = ("wasm32", "wasm64")
 REPO = os.environ.get("GITHUB_REPOSITORY", "Kitware/vtk-wasm")
-DIST_REF = "dist"  # the branch jsDelivr/raw URLs resolve against
+DIST_REF = "dist"  # the branch githack/raw URLs resolve against
 
 GZIP_MAGIC = b"\x1f\x8b"
 MIN_BUNDLE_BYTES = 1_000_000  # a real bundle is ~22 MB; anything tiny is an error page
@@ -115,7 +115,9 @@ def download_bundle(version, arch, dest: Path):
 def cdn_urls(relpath: str):
     relpath = relpath.replace(os.sep, "/")
     return {
-        "jsdelivr": f"https://cdn.jsdelivr.net/gh/{REPO}@{DIST_REF}/{relpath}",
+        # raw.githack.com proxies GitHub raw with permissive CORS and no file-size
+        # limit (jsDelivr/gh refuses the >20 MB bundles).
+        "githack": f"https://raw.githack.com/{REPO}/{DIST_REF}/{relpath}",
         "raw": f"https://raw.githubusercontent.com/{REPO}/{DIST_REF}/{relpath}",
     }
 

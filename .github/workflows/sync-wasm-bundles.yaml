@@ -1,10 +1,10 @@
 name: Sync VTK.wasm bundles
 
 # Mirrors the GitLab generic-package gzip bundles (wasm32 + wasm64) into the
-# `dist` branch so they can be served over a CORS-friendly CDN (jsDelivr) or raw
-# GitHub, e.g.:
-#   latest:  https://cdn.jsdelivr.net/gh/Kitware/vtk-wasm@dist/latest/vtk-wasm<32|64>-emscripten.tar.gz
-#   release: https://cdn.jsdelivr.net/gh/Kitware/vtk-wasm@dist/releases/<version>/vtk-<version>-wasm<32|64>-emscripten.tar.gz
+# `dist` branch so they can be served over a CORS-friendly proxy (raw.githack.com)
+# or raw GitHub, e.g.:
+#   latest:  https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm<32|64>-emscripten.tar.gz
+#   release: https://raw.githack.com/Kitware/vtk-wasm/dist/releases/<version>/vtk-<version>-wasm<32|64>-emscripten.tar.gz
 #
 # `dist` is rewritten as a single squashed commit each run, so superseded weekly
 # bundles never accumulate in git history (official releases persist as files).
@@ -71,7 +71,7 @@ jobs:
           git push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" dist
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
-      - name: Purge jsDelivr cache
+      - name: Purge githack cache
         if: steps.publish.outputs.changed == 'true'
         run: |
           for path in \
@@ -80,5 +80,6 @@ jobs:
             "latest/wasm32.version" \
             "latest/wasm64.version" \
             "manifest.json"; do
-            curl -sf "https://purge.jsdelivr.net/gh/${GITHUB_REPOSITORY}@dist/${path}" || true
+            curl -sf -G -X DELETE "https://raw.githack.com/purge" \
+              --data-urlencode "url=https://raw.githack.com/${GITHUB_REPOSITORY}/dist/${path}" || true
           done
