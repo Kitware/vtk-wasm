@@ -24,13 +24,21 @@ export { loadAsync, VtkWasmRuntime, StandaloneSession, RemoteSession };
  */
 export let ready;
 
+/**
+ * The {@link StandaloneSession} created by the annotation auto-load. Set after
+ * `ready` resolves; `undefined` before then and when auto-load is not active.
+ * Use it to call `session.registerCanvas()` and similar helpers.
+ */
+export let session;
+
 if (typeof window !== "undefined") {
   const script = document.querySelector("#vtk-wasm");
   if (script) {
     const url = script.dataset.url || ".";
     const config = JSON.parse(script.dataset.config || "{}");
-    ready = loadAsync({ url, ...config }).then(
-      (runtime) => runtime.createStandaloneSession().vtk,
-    );
+    ready = loadAsync({ url, ...config }).then((runtime) => {
+      session = runtime.createStandaloneSession();
+      return session.vtk;
+    });
   }
 }
