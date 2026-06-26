@@ -312,3 +312,64 @@ await renderer.resetCamera();
 await interactor.interactorStyle.setCurrentStyleToTrackballCamera();
 await interactor.start();</pre>
 </Playground>
+
+## WebGL2 rendering into a canvas without an `id`
+
+Normally VTK locates the canvas via a CSS selector, which requires the element to have a DOM `id`. If your canvas is framework-managed, dynamically created, or simply has no `id`, register it directly with `session.registerCanvas(key, canvas)`. The key must start with `!` (Emscripten convention) and is then used as the `canvasSelector`.
+
+When using the annotation auto-load (`id="vtk-wasm"`), the owning session is available as `vtkwasm.session` after `ready` resolves. When using [`loadAsync`](./loading.md) directly, the session is returned from `createStandaloneSession()`:
+
+```js
+const runtime = await loadAsync({ url: "..." });
+const session = runtime.createStandaloneSession();
+const canvasSelector = session.registerCanvas("!vtk-canvas", canvas);
+const vtk = session.vtk;
+```
+
+<Playground display-i-frame>
+    <textarea data-lang="html" style="display:none"><!doctype html>
+<html lang="en">
+  <head>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+    </style>
+    <script
+      src="https://unpkg.com/@kitware/vtk-wasm/vtk-umd.js"
+      id="vtk-wasm"
+      data-url="https://gitlab.kitware.com/api/v4/projects/13/packages/generic/vtk-wasm32-emscripten/9.6.20260228/vtk-9.6.20260228-wasm32-emscripten.tar.gz"></script>
+  </head>
+  <body>
+    <div style="min-height:300px">
+      <canvas
+        tabindex="-1"
+        onclick="focus()"
+        oncontextmenu="event.preventDefault()"></canvas>
+    </div>
+  </body>
+</html></textarea>
+<pre data-lang="js" style="display:none">
+const vtk = await vtkwasm.ready;
+const canvas = document.querySelector("canvas");
+const canvasSelector = vtkwasm.session.registerCanvas("!vtk-canvas", canvas);
+const mesh = vtk.vtkPartitionedDataSetCollectionSource({
+    numberOfShapes: 1
+});
+const mapper = vtk.vtkCompositePolyDataMapper();
+await mapper.setInputConnection(await mesh.getOutputPort());
+const actor = vtk.vtkActor({mapper})
+const renderer = vtk.vtkRenderer({background: [0.2, 0.2, 0.2]});
+renderer.addViewProp(actor);
+const renderWindow = vtk.vtkRenderWindow({ canvasSelector });
+await renderWindow.addRenderer(renderer);
+const interactor = vtk.vtkRenderWindowInteractor({
+    canvasSelector,
+    renderWindow,
+});
+await renderer.resetCamera();
+await interactor.interactorStyle.setCurrentStyleToTrackballCamera();
+await interactor.start();</pre>
+</Playground>

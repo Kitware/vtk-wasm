@@ -1,4 +1,4 @@
-async function buildWASMScene(vtk, titleText = "Sample VTK.wasm scene") {
+async function buildWASMScene(vtk, canvasSelector = "#vtk-wasm-window", titleText = "Sample VTK.wasm scene") {
 
   function createSharedTextProperty() {
     const textProperty = vtk.vtkTextProperty({fontSize: 22});
@@ -54,7 +54,6 @@ async function buildWASMScene(vtk, titleText = "Sample VTK.wasm scene") {
   await renderer.resetCamera();
 
   // Create a RenderWindow and bind it to a canvas in the DOM
-  const canvasSelector = "#vtk-wasm-window";
   const renderWindow = vtk.vtkRenderWindow({ canvasSelector });
   await renderWindow.addRenderer(renderer);
   const interactor = vtk.vtkRenderWindowInteractor({

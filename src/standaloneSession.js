@@ -8,15 +8,18 @@ import { createInstantiatorProxy } from "./core/proxy";
  */
 export class StandaloneSession {
   #native = null;
+  #module = null;
   #disposed = false;
   #vtkProxyCache = new WeakMap();
   #idToRef = new Map();
 
   /**
    * @param {object} native - the C++ vtkStandaloneSession instance.
+   * @param {object} module - the Emscripten module (for specialHTMLTargets access).
    */
-  constructor(native) {
+  constructor(native, module) {
     this.#native = native;
+    this.#module = module;
     /**
      * The `vtk` namespace: call `vtk.vtkActor({ ... })` to create objects.
      * @type {object}
@@ -30,9 +33,25 @@ export class StandaloneSession {
   }
 
   /**
+   * Register `canvas` under `key` in `specialHTMLTargets` so it can be used as
+   * a `canvasSelector` without requiring a DOM `id`. The key must start with `!`
+   * (Emscripten convention). Returns `key` for convenience.
+   *
+   * @param {string} key - selector key, e.g. `"!my-canvas"`.
+   * @param {HTMLCanvasElement} canvas
+   * @returns {string} the key
+   */
+  registerCanvas(key, canvas) {
+    if (this.#module?.specialHTMLTargets) {
+      this.#module.specialHTMLTargets[key] = canvas;
+    }
+    return key;
+  }
+
+  /**
    * @returns {boolean}
    */
-  get disposed(){
+  get disposed() {
     return this.#disposed;
   }
 

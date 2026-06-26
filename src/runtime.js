@@ -206,7 +206,7 @@ export class VtkWasmRuntime {
    */
   createStandaloneSession() {
     this.#assertLive();
-    return new StandaloneSession(new this.#module.vtkStandaloneSession());
+    return new StandaloneSession(new this.#module.vtkStandaloneSession(), this.#module);
   }
 
   /**
