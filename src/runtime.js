@@ -1,7 +1,7 @@
 import { extractFilesFromGzipBundleAsync, fetchGzipBundleAsync } from "./core/gzipBundle";
 import { createEmscriptenConfig, normalizeConfig, validateConfig } from "./core/configManager";
 import { DEFAULT_CONFIG, DEFAULT_WASM_BASE_NAME, DEFAULT_WASM_URL_IS_GZIP, MIME_TYPES } from "./core/constants";
-import { createScriptURLAsync, loadWebAssemblyModuleFromExistingScriptAsync, loadWebAssemblyModuleFromScriptAsync } from "./core/scriptLoader";
+import { createScriptURLAsync } from "./core/scriptLoader";
 import { createBlobURL, disposeBlobURL } from "./core/blobURL";
 import { StandaloneSession } from "./standaloneSession";
 import { RemoteSession } from "./remoteSession";
@@ -43,57 +43,87 @@ function exposeSpecialHTMLTargets(buffer) {
 }
 
 /**
- * Ensure `window.createVTKWASM` is available, loading the glue script if needed.
- * Returns the wasm binary descriptor when it had to be extracted from a gzip
- * bundle (so it can be handed to Emscripten), otherwise null.
+ * Dynamically import the Emscripten glue module and return its default export.
+ * sync (`...WebAssembly.mjs`) and async (`...WebAssemblyAsync.mjs`) glue modules
+ * resolve to distinct factories and never collide on a shared global.
+ *
+ * @param {string} moduleURL - URL (or blob URL) of the glue `.mjs` module.
+ * @returns {Promise<Function>} the module factory.
  */
-async function prepareModuleFactoryAsync(url, urlIsGzip, wasmBaseName, config) {
-  if (!window.createVTKWASM) {
-    await loadWebAssemblyModuleFromExistingScriptAsync(wasmBaseName);
+async function importModuleFactoryAsync(moduleURL) {
+  let namespace;
+  try {
+    // @vite-ignore keeps this a true runtime dynamic import (the URL is a
+    // variable / blob URL that Vite must not try to statically resolve).
+    namespace = await import(/* @vite-ignore */ moduleURL);
+  } catch (cause) {
+    throw new Error(
+      [
+        `Could not import the WebAssembly glue module from "${moduleURL}".`,
+        "Possible causes include:",
+        "  - Incorrect or unreachable 'url'",
+        "  - Wrong 'wasmBaseName' or missing/misnamed .mjs/.wasm files in the bundle",
+        "  - Network or script loading failures (e.g., 404/500 responses)",
+        "  - Content Security Policy (CSP) blocking module execution",
+        "",
+        "Next steps:",
+        "  - Verify that the expected .mjs and .wasm files are present and accessible under 'url'",
+        "  - Check the browser's Network/Console tabs for failed module requests or CSP errors.",
+      ].join("\n"),
+      { cause },
+    );
   }
-  if (window.createVTKWASM) {
-    return null;
+  const factory = namespace?.default;
+  if (typeof factory !== "function") {
+    throw new Error(
+      `The module at "${moduleURL}" did not provide a default export factory function.`,
+    );
   }
+  return factory;
+}
 
+/**
+ * Resolve the glue module factory and the wasm binary descriptor (if any) for
+ * the requested configuration. Returns `{ factory, wasmFile }`, where
+ * `wasmFile` is non-null only when the binary had to be extracted from a gzip
+ * bundle (so it can be handed to Emscripten).
+ */
+async function loadModuleFactoryAsync(url, urlIsGzip, wasmBaseName, config) {
   if (urlIsGzip) {
     const gzipArrayBuffer = await fetchGzipBundleAsync(url);
     const { js, wasm } = await extractFilesFromGzipBundleAsync(gzipArrayBuffer, config, wasmBaseName);
     const javaScriptBlobURL = createBlobURL(exposeSpecialHTMLTargets(js.buffer), MIME_TYPES.JAVASCRIPT);
     try {
-      await loadWebAssemblyModuleFromScriptAsync(javaScriptBlobURL);
+      const factory = await importModuleFactoryAsync(javaScriptBlobURL);
+      return { factory, wasmFile: wasm };
     } finally {
+      // Safe to revoke now: the module is fully evaluated once import() resolves.
       disposeBlobURL(javaScriptBlobURL);
     }
-    return wasm;
   }
 
   const scriptURL = await createScriptURLAsync(url, wasmBaseName, config);
-  if (scriptURL !== null) {
-    await loadWebAssemblyModuleFromScriptAsync(scriptURL);
+  if (scriptURL === null) {
+    const execModeSuffix = config?.exec === "async" ? "Async" : "";
+    throw new Error(
+      [
+        `Could not locate the WebAssembly glue module for '${wasmBaseName}WebAssembly${execModeSuffix}.mjs' under "${url}".`,
+        "The file was missing, returned a non-OK response, or the server replied with an HTML document.",
+        "",
+        "Next steps:",
+        "  - Verify that the expected .mjs and .wasm files are present and accessible under 'url'",
+        "  - Check the browser's Network/Console tabs for failed module requests or CSP errors.",
+      ].join("\n"),
+    );
   }
-  return null;
+  const factory = await importModuleFactoryAsync(scriptURL);
+  return { factory, wasmFile: null };
 }
 
 async function instantiateAsync(url, urlIsGzip, wasmBaseName, config, key) {
   try {
-    const wasmFile = await prepareModuleFactoryAsync(url, urlIsGzip, wasmBaseName, config);
-    if (!window.createVTKWASM) {
-      throw new Error(
-        [
-          "Could not load WebAssembly module: window.createVTKWASM is not available after loading scripts.",
-          "Possible causes include:",
-          `  - Incorrect or unreachable 'url' ("${url}")`,
-          `  - Wrong 'wasmBaseName' ("${wasmBaseName}") or missing/misnamed .mjs/.wasm files in the bundle`,
-          "  - Network or script loading failures (e.g., 404/500 responses)",
-          "  - Content Security Policy (CSP) blocking script execution",
-          "",
-          "Next steps:",
-          "  - Verify that the expected .mjs and .wasm files are present and accessible under 'url'",
-          "  - Check the browser's Network/Console tabs for failed script requests or CSP errors.",
-        ].join("\n"),
-      );
-    }
-    const module = await window.createVTKWASM(createEmscriptenConfig(config, wasmFile));
+    const { factory, wasmFile } = await loadModuleFactoryAsync(url, urlIsGzip, wasmBaseName, config);
+    const module = await factory(createEmscriptenConfig(config, wasmFile));
     const runtime = new VtkWasmRuntime(module, key);
     RUNTIME_CACHE.set(key, runtime);
     return runtime;

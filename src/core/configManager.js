@@ -69,7 +69,7 @@ export function createEmscriptenConfig(config, wasmFile) {
       ? config.preRun
       : (config?.preRun ? [config.preRun] : []);
     emscriptenConfig.preRun = [(module) => {
-      module.ENV.VTK_GRAPHICS_BACKEND = 'WEBGPU';
+      module.ENV.VTK_FACTORY_PREFER = 'RenderingBackend=WebGPU';
     },
     ...userPreRun];
   }
