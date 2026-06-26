@@ -1,0 +1,84 @@
+name: Sync VTK.wasm bundles
+
+# Mirrors the GitLab generic-package gzip bundles (wasm32 + wasm64) into the
+# `dist` branch so they can be served over a CORS-friendly CDN (jsDelivr) or raw
+# GitHub, e.g.:
+#   latest:  https://cdn.jsdelivr.net/gh/Kitware/vtk-wasm@dist/latest/vtk-wasm<32|64>-emscripten.tar.gz
+#   release: https://cdn.jsdelivr.net/gh/Kitware/vtk-wasm@dist/releases/<version>/vtk-<version>-wasm<32|64>-emscripten.tar.gz
+#
+# `dist` is rewritten as a single squashed commit each run, so superseded weekly
+# bundles never accumulate in git history (official releases persist as files).
+
+on:
+  schedule:
+    - cron: "0 8 * * 1" # Mondays 08:00 UTC (weekly builds land Sun ~08-10 UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-wasm-bundles
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Seed existing dist content
+        id: seed
+        run: |
+          mkdir -p dist-content
+          if git fetch --depth=1 origin dist 2>/dev/null; then
+            git archive FETCH_HEAD | tar -x -C dist-content
+            echo "old_tree=$(git rev-parse FETCH_HEAD^{tree})" >> "$GITHUB_OUTPUT"
+            echo "Seeded working tree from origin/dist"
+          else
+            echo "old_tree=none" >> "$GITHUB_OUTPUT"
+            echo "No existing dist branch; starting fresh"
+          fi
+
+      - name: Mirror bundles from GitLab
+        run: python scripts/sync-wasm-bundles.py dist-content
+
+      - name: Publish to dist branch
+        id: publish
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          OLD_TREE: ${{ steps.seed.outputs.old_tree }}
+        run: |
+          cd dist-content
+          git init -q -b dist
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          new_tree=$(git write-tree)
+          echo "new tree: $new_tree  old tree: ${OLD_TREE}"
+          if [ "$new_tree" = "${OLD_TREE}" ]; then
+            echo "No changes to publish."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git commit -q -m "chore(dist): sync VTK.wasm bundles ($(date -u +%Y-%m-%d))"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" dist
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Purge jsDelivr cache
+        if: steps.publish.outputs.changed == 'true'
+        run: |
+          for path in \
+            "latest/vtk-wasm32-emscripten.tar.gz" \
+            "latest/vtk-wasm64-emscripten.tar.gz" \
+            "latest/wasm32.version" \
+            "latest/wasm64.version" \
+            "manifest.json"; do
+            curl -sf "https://purge.jsdelivr.net/gh/${GITHUB_REPOSITORY}@dist/${path}" || true
+          done
