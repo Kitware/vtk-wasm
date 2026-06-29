@@ -38,7 +38,7 @@
             }
             try {
               pickingPending = true;
-              const pos = interactor.state.eventPosition;
+              const pos = await interactor.getEventPosition();
               const found = await picker.pick([...pos, 0], renderer);
               if (found) {
                 if (lastActor) {
