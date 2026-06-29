@@ -7,7 +7,8 @@ Create one from a [runtime](./loading.md):
 ```js
 import { loadAsync } from "@kitware/vtk-wasm";
 
-const runtime = await loadAsync({ url: VTK_WASM_BUNDLE_URL });
+const BUNDLE = "https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz";
+const runtime = await loadAsync({url: BUNDLE });
 const session = runtime.createStandaloneSession();
 
 const vtk = session.vtk; // the namespace

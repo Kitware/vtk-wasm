@@ -16,8 +16,8 @@ Load the runtime, create a session, and use its `vtk` namespace:
 
 ```js
 import { loadAsync } from "@kitware/vtk-wasm";
-
-const runtime = await loadAsync({ url: VTK_WASM_BUNDLE_URL });
+const BUNDLE = "https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz";
+const runtime = await loadAsync({url: BUNDLE });
 const session = runtime.createStandaloneSession();
 const vtk = session.vtk;
 
