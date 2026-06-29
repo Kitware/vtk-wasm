@@ -340,7 +340,7 @@ const vtk = session.vtk;
     <script
       src="https://unpkg.com/@kitware/vtk-wasm/vtk-umd.js"
       id="vtk-wasm"
-      data-url="https://gitlab.kitware.com/api/v4/projects/13/packages/generic/vtk-wasm32-emscripten/9.6.20260228/vtk-9.6.20260228-wasm32-emscripten.tar.gz"></script>
+      data-url="https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz"></script>
   </head>
   <body>
     <div style="min-height:300px">
