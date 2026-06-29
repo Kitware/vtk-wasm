@@ -15,7 +15,7 @@ Start by instantiating the class you need from the `vtk` namespace.
         <script
             src="https://unpkg.com/@kitware/vtk-wasm/vtk-umd.js"
             id="vtk-wasm"
-            data-url="https://gitlab.kitware.com/api/v4/projects/13/packages/generic/vtk-wasm32-emscripten/9.6.20260228/vtk-9.6.20260228-wasm32-emscripten.tar.gz">
+            data-url="https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz">
         </script>
     </head>
     <body>
@@ -37,7 +37,7 @@ Once you have an object, inspection usually comes next. Use `toString()` to invo
         <script
             src="https://unpkg.com/@kitware/vtk-wasm/vtk-umd.js"
             id="vtk-wasm"
-            data-url="https://gitlab.kitware.com/api/v4/projects/13/packages/generic/vtk-wasm32-emscripten/9.6.20260228/vtk-9.6.20260228-wasm32-emscripten.tar.gz">
+            data-url="https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz">
         </script>
     </head>
     <body>
@@ -86,7 +86,7 @@ Object properties can be read and assigned with standard `.` notation.
         <script
             src="https://unpkg.com/@kitware/vtk-wasm/vtk-umd.js"
             id="vtk-wasm"
-            data-url="https://gitlab.kitware.com/api/v4/projects/13/packages/generic/vtk-wasm32-emscripten/9.6.20260228/vtk-9.6.20260228-wasm32-emscripten.tar.gz">
+            data-url="https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz">
         </script>
     </head>
     <body>
@@ -110,7 +110,7 @@ Member functions are also accessed with `.` notation. These calls return `Promis
         <script
             src="https://unpkg.com/@kitware/vtk-wasm/vtk-umd.js"
             id="vtk-wasm"
-            data-url="https://gitlab.kitware.com/api/v4/projects/13/packages/generic/vtk-wasm32-emscripten/9.6.20260228/vtk-9.6.20260228-wasm32-emscripten.tar.gz">
+            data-url="https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz">
         </script>
     </head>
     <body>
@@ -138,7 +138,7 @@ The same object model extends to method arguments. When an API expects another V
         <script
             src="https://unpkg.com/@kitware/vtk-wasm/vtk-umd.js"
             id="vtk-wasm"
-            data-url="https://gitlab.kitware.com/api/v4/projects/13/packages/generic/vtk-wasm32-emscripten/9.6.20260228/vtk-9.6.20260228-wasm32-emscripten.tar.gz">
+            data-url="https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz">
         </script>
     </head>
     <body>
@@ -165,7 +165,7 @@ When an object is no longer needed, call `delete()` to release its external Java
         <script
             src="https://unpkg.com/@kitware/vtk-wasm/vtk-umd.js"
             id="vtk-wasm"
-            data-url="https://gitlab.kitware.com/api/v4/projects/13/packages/generic/vtk-wasm32-emscripten/9.6.20260228/vtk-9.6.20260228-wasm32-emscripten.tar.gz">
+            data-url="https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz">
         </script>
     </head>
     <body>
@@ -191,7 +191,7 @@ VTK provides array classes for typed data exchange. These arrays accept JavaScri
         <script
             src="https://unpkg.com/@kitware/vtk-wasm/vtk-umd.js"
             id="vtk-wasm"
-            data-url="https://gitlab.kitware.com/api/v4/projects/13/packages/generic/vtk-wasm32-emscripten/9.6.20260228/vtk-9.6.20260228-wasm32-emscripten.tar.gz">
+            data-url="https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz">
         </script>
     </head>
     <body>
@@ -217,7 +217,7 @@ In addition to VTK-managed state, you can attach custom JavaScript properties to
         <script
             src="https://unpkg.com/@kitware/vtk-wasm/vtk-umd.js"
             id="vtk-wasm"
-            data-url="https://gitlab.kitware.com/api/v4/projects/13/packages/generic/vtk-wasm32-emscripten/9.6.20260228/vtk-9.6.20260228-wasm32-emscripten.tar.gz">
+            data-url="https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz">
         </script>
     </head>
     <body>
@@ -242,7 +242,7 @@ For interactive workflows, register event handlers with `observe()`. Remove a ha
         <script
             src="https://unpkg.com/@kitware/vtk-wasm/vtk-umd.js"
             id="vtk-wasm"
-            data-url="https://gitlab.kitware.com/api/v4/projects/13/packages/generic/vtk-wasm32-emscripten/9.6.20260228/vtk-9.6.20260228-wasm32-emscripten.tar.gz">
+            data-url="https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz">
         </script>
     </head>
     <body>
@@ -279,7 +279,7 @@ Create a canvas in your HTML and ensure that you assign the `id` of the canvas t
     <script
       src="https://unpkg.com/@kitware/vtk-wasm/vtk-umd.js"
       id="vtk-wasm"
-      data-url="https://gitlab.kitware.com/api/v4/projects/13/packages/generic/vtk-wasm32-emscripten/9.6.20260228/vtk-9.6.20260228-wasm32-emscripten.tar.gz"></script>
+      data-url="https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz"></script>
   </head>
   <body>
     <div style="min-height:300px">
