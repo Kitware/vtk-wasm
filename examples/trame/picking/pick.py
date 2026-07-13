@@ -99,42 +99,52 @@ class Pick(TrameApp):
                 )  # for pure client edit
 
                 # => attach interactor listener
+                #    EventPosition (and LastEventPosition) are excluded from
+                #    marshalling, so they are no longer part of the client state
+                #    and cannot be read through `view.listeners`. Use the event
+                #    purely as a trigger and query interactor.GetEventPosition()
+                #    on demand when handling the pick (see _pick_actor).
                 wasm_interactor_id = view.get_wasm_id(self.interactor)
                 view.listeners = (
                     "wasm_listeners",
                     {
                         wasm_interactor_id: {
                             "LeftButtonPressEvent": {  # LeftButtonPressEvent, MouseMoveEvent
-                                "clicked_pos": {
-                                    "x": (wasm_interactor_id, "EventPosition", 0),
-                                    "y": (wasm_interactor_id, "EventPosition", 1),
+                                "clicked": {
+                                    # any still-marshalled scalar; only used to
+                                    # signal that a click happened
+                                    "pointer": (wasm_interactor_id, "PointerIndex"),
                                 },
                             },
                         },
                     },
                 )
                 # => reserve state variable for widget update
-                self.state.clicked_pos = None
+                self.state.clicked = None
             # endregion trameWidget
 
     # region trameChange
-    @change("clicked_pos")
-    def on_click(self, clicked_pos, **_):
-        if clicked_pos is None:
+    @change("clicked")
+    def on_click(self, clicked, **_):
+        if clicked is None:
             return
 
         if not self._picking_prending:
-            asynchronous.create_task(self._pick_actor(**clicked_pos))
+            asynchronous.create_task(self._pick_actor())
 
     # endregion trameChange
 
     # region py2wasmCall
-    async def _pick_actor(self, x, y):
+    async def _pick_actor(self):
         if self._picking_prending:
             return
 
         try:
             self._picking_prending = True
+            # EventPosition is excluded from marshalling, so fetch the current
+            # click coordinates on demand instead of reading them from state.
+            pos = await self.ctx.wasm_view.invoke(self.interactor, "GetEventPosition")
+            x, y = pos[0], pos[1]
             # Trigger a pick on client
             picked_worked = await self.ctx.wasm_view.invoke(
                 self.picker, "Pick", (x, y, 0), self.renderer
@@ -165,6 +175,11 @@ class Pick(TrameApp):
         finally:
             # Render
             self.ctx.wasm_view.update()
+            # Reset the trigger so the next click re-fires @change even though
+            # the marshalled "clicked" value is identical (trame dedups equal
+            # values before dispatching state-change listeners).
+            with self.state:
+                self.state.clicked = None
             self._picking_prending = False
 
         # endregion py2wasmCall
