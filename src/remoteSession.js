@@ -24,7 +24,8 @@ export class RemoteSession {
     this.#native = native;
     this.#module = wasmModule;
     //
-    this.updateInProgress = 0;
+    this._updateTail = Promise.resolve(); // serialize all updates on this session
+    this._pendingUpdates = new Map(); // vtkId -> queued-but-not-started run (coalescing)
     this.currentMTime = 1;
     this.stateMTimes = {};
     this.hashesMTime = {};
@@ -246,13 +247,34 @@ export class RemoteSession {
    *
    * @param {int} vtkId
    */
-  async updateAsync(vtkId) {
-    this.updateInProgress++;
-    if (this.updateInProgress !== 1) {
-      // console.error("Skip concurrent update");
-      return;
+  updateAsync(vtkId) {
+    const id = Number(vtkId);
+    // Coalesce: a queued (not-yet-started) run for this id will capture the
+    // latest server state, so redundant callers can await it instead of piling
+    // on. Distinct ids are never coalesced; they queue behind one another.
+    if (this._pendingUpdates.has(id)) {
+      return this._pendingUpdates.get(id);
     }
+    // Serialize every update on this session: they all mutate the shared native
+    // object manager, so their state registration must never intermix.
+    const run = this._updateTail.then(() => {
+      // This run has started; later calls for this id queue a fresh run.
+      this._pendingUpdates.delete(id);
+      return this.#doUpdateAsync(id);
+    });
+    this._pendingUpdates.set(id, run);
+    this._updateTail = run.catch(() => {}); // keep the chain alive on failure
+    return run;
+  }
 
+  /**
+   * Fetch and register the remote state for `vtkId`, then render it if it is a
+   * bound render window. Serialized via {@link RemoteSession#updateAsync}; do
+   * not call directly.
+   *
+   * @param {int} vtkId
+   */
+  async #doUpdateAsync(vtkId) {
     try {
       const serverStatus = await this.networkFetchStatus(vtkId);
       const hashesToFetch = [];
@@ -348,11 +370,6 @@ export class RemoteSession {
         this.progressState.active = false;
         this.emitProgress();
         this.progressState = null;
-      }
-      this.updateInProgress--;
-      if (this.updateInProgress) {
-        this.updateInProgress = 0;
-        await this.updateAsync(vtkId);
       }
     }
   }
