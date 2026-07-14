@@ -74,7 +74,7 @@ export class RemoteSession {
     this.renderWindowIdsWithRunningEventLoops.delete(renderWindowId);
     return this.#native.stopEventLoop(renderWindowId);
   }
-  
+
   /**
    * Inject network implementation for fetching state and blob
    */
@@ -263,7 +263,7 @@ export class RemoteSession {
       return this.#doUpdateAsync(id);
     });
     this._pendingUpdates.set(id, run);
-    this._updateTail = run.catch(() => {}); // keep the chain alive on failure
+    this._updateTail = run.catch(() => { }); // keep the chain alive on failure
     return run;
   }
 
@@ -431,7 +431,7 @@ export class RemoteSession {
     if (!entry) {
       throw new Error(
         `No canvas registered for render window ${renderWindowId}. ` +
-          `Call bindCanvas(renderWindowId, canvas) first.`,
+        `Call bindCanvas(renderWindowId, canvas) first.`,
       );
     }
     return entry.target;
@@ -477,7 +477,7 @@ export class RemoteSession {
     } else {
       throw new Error(
         `bindCanvas: this build does not expose specialHTMLTargets, so the ` +
-          `canvas for render window ${renderWindowId} must have an 'id'.`,
+        `canvas for render window ${renderWindowId} must have an 'id'.`,
       );
     }
 
@@ -518,7 +518,7 @@ export class RemoteSession {
    * @param {int} width
    * @param {int} height
    */
-  async setSizeAsync(renderWindowId, width, height)  {
+  async setSizeAsync(renderWindowId, width, height) {
     const rwId = Number(renderWindowId);
     this.renderWindowSizes[rwId] = [width, height];
 
@@ -555,7 +555,7 @@ export class RemoteSession {
   /**
    * @returns {boolean}
    */
-  get disposed(){
+  get disposed() {
     return this.#disposed;
   }
 
