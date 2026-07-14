@@ -52,7 +52,22 @@ export class RemoteSession {
     this.vtk = createInstantiatorProxy(native, this.#vtkProxyCache, this.#idToRef);
 
     // Do not let server-side window sizes override the client canvas size.
-    native.skipProperty("vtkRenderWindow", "Size");
+    // skipProperty matches the state's leaf ClassName (the server's concrete render
+    // window class), so list every platform variant; "vtkRenderWindow" also covers
+    // the vtkOSOpenGLRenderWindow -> vtkRenderWindow remap in vtkSessionRegisterState.
+    ["vtkRenderWindow",
+      "vtkEGLRenderWindow",
+      "vtkOSOpenGLRenderWindow",
+      "vtkXOpenGLRenderWindow",
+      "vtkWin32OpenGLRenderWindow",
+      "vtkCocoaRenderWindow",
+      "vtkWebGPURenderWindow"
+    ].forEach((name) => native.skipProperty(name, "Size"));
+
+    // The embedder owns canvas sizing (bindCanvas / setSizeAsync), so opt out of
+    // VTK's interactor self-sizing, which otherwise couples multiple views on a page.
+    this.#module?._setDefaultExpandVTKCanvasToContainer?.(false);
+    this.#module?._setDefaultInstallHTMLResizeObserver?.(false);
   }
 
   /** The underlying C++ session. Escape hatch; prefer {@link RemoteSession#vtk}. */
