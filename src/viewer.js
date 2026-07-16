@@ -8,6 +8,15 @@ import JSZip from "jszip";
 import { loadAsync } from "./runtime";
 import { createFuture } from "./core/future";
 
+function debounce(func, delay = 100) {
+  let timeoutId;
+
+  return function (...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(func, delay, ...args);
+  };
+}
+
 export class ExportViewer {
   constructor(containerSelector, remoting) {
     this.remoting = remoting;
@@ -66,10 +75,27 @@ export class ExportViewer {
       "position: absolute; left: 0; top: 0; width: 100%; height: 100%;",
     );
     this.container.appendChild(canvas);
-
     const target = this.remoting.bindCanvas(rwId, canvas);
     this.remoting.native.bindRenderWindow(rwId, target);
-    this.remoting.native.startEventLoop(rwId);
+    this.remoting.boundRenderWindows.add(rwId);
+
+    // RemoteSession opts out of VTK's own canvas sizing (resize observer /
+    // expand-to-container), so the viewer owns it: size the render window to
+    // the canvas now (this also triggers the first render) and on every resize.
+    const resize = () => {
+      const { width, height } = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      this.remoting.setSizeAsync(
+        rwId,
+        Math.max(1, Math.round(width * dpr)),
+        Math.max(1, Math.round(height * dpr)),
+      );
+    };
+    this.resizeObserver = new ResizeObserver(debounce(resize));
+    this.resizeObserver.observe(canvas);
+    resize();
+
+    this.remoting.startEventLoop(rwId);
   }
 }
 
