@@ -1,6 +1,7 @@
 import untar from "js-untar";
 import { stripLeadingDotSlash } from "./stringOps.js";
 import { MODULE_JS_FILE_EXTENSION, WASM_FILE_EXTENSION } from "./constants.js";
+import { wasmModuleBaseNames } from "./wasmModuleNames.js";
 
 /**
  * Fetch gzip bundle from provided URL
@@ -37,13 +38,19 @@ export async function fetchGzipBundleAsync(url) {
  */
 export async function extractFilesFromGzipBundleAsync(contents, config, wasmBaseName) {
   const files = await untar(contents);
-  const execModeSuffix = config?.exec === "async" ? "Async" : "";
-  const jsFileMatch = `${wasmBaseName}WebAssembly${execModeSuffix}${MODULE_JS_FILE_EXTENSION}`;
-  const wasmFileMatch = `${wasmBaseName}WebAssembly${execModeSuffix}${WASM_FILE_EXTENSION}`;
-  const jsFile = files.find((file) => stripLeadingDotSlash(file.name) === jsFileMatch);
-  const wasmFile = files.find((file) => stripLeadingDotSlash(file.name) === wasmFileMatch);
-  if (jsFile === undefined || wasmFile === undefined) {
-    throw new Error(`Could not find expected files ${jsFileMatch} and ${wasmFileMatch} in the gzip bundle`);
+  // New single-binary bundles ship `${wasmBaseName}WebAssembly.{mjs,wasm}`; older
+  // split bundles also carry a `${wasmBaseName}WebAssemblyAsync.{mjs,wasm}` pair.
+  // Try each candidate base name in order and use the first complete js+wasm pair.
+  const tried = [];
+  for (const moduleBaseName of wasmModuleBaseNames(wasmBaseName, config)) {
+    const jsFileMatch = `${moduleBaseName}${MODULE_JS_FILE_EXTENSION}`;
+    const wasmFileMatch = `${moduleBaseName}${WASM_FILE_EXTENSION}`;
+    tried.push(jsFileMatch, wasmFileMatch);
+    const jsFile = files.find((file) => stripLeadingDotSlash(file.name) === jsFileMatch);
+    const wasmFile = files.find((file) => stripLeadingDotSlash(file.name) === wasmFileMatch);
+    if (jsFile !== undefined && wasmFile !== undefined) {
+      return { js: jsFile, wasm: wasmFile };
+    }
   }
-  return { js: jsFile, wasm: wasmFile };
+  throw new Error(`Could not find expected wasm module files (any of ${tried.join(", ")}) in the gzip bundle`);
 }
