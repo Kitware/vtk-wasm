@@ -4,6 +4,28 @@ This primer introduces the **vtk** namespace and the core interaction patterns u
 
 All of these code snippets load the vtk-wasm JS library and the binaries using a `<script>` tag in the HTML - for convenience. See [HTML Script Tag](./integration.md#html-script-tag) for details.
 
+## Print VTK version
+
+This is how you can print the version of VTK in use.
+
+<Playground>
+    <textarea data-lang="html" style="display:none"><!doctype html>
+<html lang="en">
+    <head>
+        <script
+            src="https://unpkg.com/@kitware/vtk-wasm/vtk-umd.js"
+            id="vtk-wasm"
+            data-url="https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz">
+        </script>
+    </head>
+    <body>
+    </body>
+</html></textarea>
+    <pre data-lang="js" style="display:none">const vtk = await vtkwasm.ready;
+console.log(`VTK version: ${vtkwasm.session.wasmModule.getVTKVersion()}`);</pre>
+</Playground>
+
+
 ## Create objects
 
 Start by instantiating the class you need from the `vtk` namespace.

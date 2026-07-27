@@ -1,6 +1,7 @@
 import { extractFilesFromGzipBundleAsync, fetchGzipBundleAsync } from "./core/gzipBundle";
 import { createEmscriptenConfig, normalizeConfig, validateConfig } from "./core/configManager";
 import { DEFAULT_CONFIG, DEFAULT_WASM_BASE_NAME, DEFAULT_WASM_URL_IS_GZIP, MIME_TYPES } from "./core/constants";
+import { wasmModuleBaseNames } from "./core/wasmModuleNames";
 import { createScriptURLAsync } from "./core/scriptLoader";
 import { createBlobURL, disposeBlobURL } from "./core/blobURL";
 import { StandaloneSession } from "./standaloneSession";
@@ -44,8 +45,8 @@ function exposeSpecialHTMLTargets(buffer) {
 
 /**
  * Dynamically import the Emscripten glue module and return its default export.
- * sync (`...WebAssembly.mjs`) and async (`...WebAssemblyAsync.mjs`) glue modules
- * resolve to distinct factories and never collide on a shared global.
+ * A single `...WebAssembly.mjs` glue module now serves both sync (`invoke`) and
+ * async (`invokeAsync`) execution.
  *
  * @param {string} moduleURL - URL (or blob URL) of the glue `.mjs` module.
  * @returns {Promise<Function>} the module factory.
@@ -104,10 +105,10 @@ async function loadModuleFactoryAsync(url, urlIsGzip, wasmBaseName, config) {
 
   const scriptURL = await createScriptURLAsync(url, wasmBaseName, config);
   if (scriptURL === null) {
-    const execModeSuffix = config?.exec === "async" ? "Async" : "";
+    const names = wasmModuleBaseNames(wasmBaseName, config).map((n) => `'${n}.mjs'`).join(" or ");
     throw new Error(
       [
-        `Could not locate the WebAssembly glue module for '${wasmBaseName}WebAssembly${execModeSuffix}.mjs' under "${url}".`,
+        `Could not locate the WebAssembly glue module (${names}) under "${url}".`,
         "The file was missing, returned a non-OK response, or the server replied with an HTML document.",
         "",
         "Next steps:",
@@ -147,6 +148,9 @@ async function instantiateAsync(url, urlIsGzip, wasmBaseName, config, key) {
  * @param {string} [options.wasmBaseName] - Base name of the wasm bundle (default "vtk").
  * @param {"webgl"|"webgpu"} [options.rendering] - Rendering backend (default "webgl").
  * @param {"sync"|"async"} [options.exec] - Method execution mode (default "sync").
+ *        With new single-binary bundles this only affects which legacy file is
+ *        preferred when present; the proxy feature-detects `invokeAsync` at
+ *        runtime. With old split bundles, "async" loads the `...Async` binary.
  * @param {Function} [options.print] - std::cout sink.
  * @param {Function} [options.printErr] - std::cerr sink.
  * @returns {Promise<VtkWasmRuntime>}

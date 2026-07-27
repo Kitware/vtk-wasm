@@ -4,6 +4,9 @@ docs/.vitepress/cache
 docs/api
 docs/public/demo/playground
 docs/public/demo/simple-app
+docs/public/js/vtk.umd.js
+docs/public/js/viewer.umd.js
+docs/public/js/viewer.css
 examples/cpp/vtk
 examples/cpp/*/build
 dist

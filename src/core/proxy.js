@@ -34,6 +34,15 @@ export function createVtkObjectProxy(
     return idToRef.get(vtkId).deref();
   }
 
+  // Newer single-binary bundles expose `invokeAsync` (JSPI); older split
+  // sync/async bundles only expose `invoke` (which is itself a promise in
+  // the async binary). Both are awaited, so feature-detect once and use
+  // whichever the loaded module provides.
+  const invokeFn =
+    typeof wasm.invokeAsync === "function"
+      ? wasm.invokeAsync.bind(wasm)
+      : wasm.invoke.bind(wasm);
+
   // Create methods
   const observerTags = [];
   function deleteObject() {
@@ -77,10 +86,9 @@ export function createVtkObjectProxy(
   function toJSON() {
     return toJsKeys(wasm.get(vtkId));
   }
+  // Extract properties and unCapitalize them & add setter
   const propGetters = createPropGetter(wasm, wrapMethods, vtkId);
   const propSetters = createPropSetter(wasm, wrapMethods, vtkId);
-
-  // Extract properties and unCapitalize them & add setter
 
   // Create proxy for given vtk object
   const target = {
@@ -115,14 +123,12 @@ export function createVtkObjectProxy(
         return propGetters[prop]();
       }
       // ideally we should have a json structure to check available methods
-      target[prop] = async (...args) =>
-        wrapMethods.decorateResult(
-          await wasm.invoke(
-            vtkId,
-            toCxxName(prop),
-            wrapMethods.decorateArgs(args),
-          ),
-        );
+      target[prop] = async (...args) => {
+        const cxxName = toCxxName(prop);
+        const decoratedArgs = wrapMethods.decorateArgs(args);
+        const result = await invokeFn(vtkId, cxxName, decoratedArgs);
+        return wrapMethods.decorateResult(result);
+      };
       return target[prop];
     },
     set(target, property, value) {
@@ -228,4 +234,3 @@ export function createInstantiatorProxy(wasm, vtkProxyCache, idToRef) {
     },
   );
 }
-
