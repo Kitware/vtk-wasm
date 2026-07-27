@@ -75,6 +75,11 @@ export class RemoteSession {
     return this.#native;
   }
 
+  /** The underlying WASM module */
+  get wasmModule() {
+    return this.#module;
+  }
+
   /** Start event loop on the render window. */
   startEventLoop(renderWindowId) {
     if (this.#native.startEventLoop(renderWindowId)) {

@@ -32,6 +32,11 @@ export class StandaloneSession {
     return this.#native;
   }
 
+  /** The underlying WASM module */
+  get wasmModule() {
+    return this.#module;
+  }
+
   /**
    * Register `canvas` under `key` in `specialHTMLTargets` so it can be used as
    * a `canvasSelector` without requiring a DOM `id`. The key must start with `!`
