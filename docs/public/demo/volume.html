@@ -1,0 +1,109 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Volume rendering — VTK.wasm</title>
+    <script
+      src="https://unpkg.com/@kitware/vtk-wasm/vtk-umd.js"
+      id="vtk-wasm"
+      data-url="https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz"
+    ></script>
+    <script src="volume.js"></script>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #0a0c0f;
+        color: #dfe6e4;
+        font-family: "IBM Plex Sans", system-ui, sans-serif;
+      }
+      #vtk-wasm-window {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        outline: none;
+      }
+      .hud {
+        position: fixed;
+        left: 14px;
+        bottom: 14px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 12px;
+        color: #9fadaa;
+        background: rgba(10, 12, 15, 0.72);
+        backdrop-filter: blur(8px);
+        border: 1px solid #1c242a;
+        border-radius: 8px;
+        padding: 8px 10px;
+      }
+      .hud button {
+        font: inherit;
+        color: #dfe6e4;
+        background: transparent;
+        border: 1px solid #263038;
+        border-radius: 5px;
+        padding: 5px 10px;
+        cursor: pointer;
+      }
+      .hud button[aria-pressed="true"] {
+        color: #0a0c0f;
+        background: #8db7f7;
+        border-color: #8db7f7;
+      }
+      .hud .sep {
+        color: #3a4a53;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- The interactor uses the right button, so the context menu is suppressed
+         or it swallows the drag as soon as the button goes down. -->
+    <canvas
+      id="vtk-wasm-window"
+      tabindex="-1"
+      onclick="focus()"
+      oncontextmenu="return false"
+    ></canvas>
+
+    <div class="hud">
+      <span id="presets">building…</span>
+      <span class="sep">·</span>
+      <span id="stats"></span>
+    </div>
+
+    <script>
+      window.addEventListener("contextmenu", (event) => event.preventDefault());
+
+      vtkwasm.ready.then(async (vtk) => {
+        const scene = await buildVolumeScene(vtk, "#vtk-wasm-window");
+        const host = document.getElementById("presets");
+        host.textContent = "";
+
+        // Switching a transfer function only re-maps colour and opacity -- the
+        // 2.1M voxels stay exactly where they are in wasm memory.
+        scene.presets.forEach((name, index) => {
+          const button = document.createElement("button");
+          button.textContent = name;
+          button.ariaPressed = String(index === 0);
+          button.addEventListener("click", async () => {
+            await scene.usePreset(name);
+            for (const other of host.querySelectorAll("button")) {
+              other.ariaPressed = String(other === button);
+            }
+          });
+          host.appendChild(button);
+        });
+
+        const { side, voxels } = scene.stats;
+        document.getElementById("stats").textContent =
+          `${side}³ = ${voxels.toLocaleString()} voxels · ` +
+          `vtkRTAnalyticSource · GPU ray cast, client-side`;
+      });
+    </script>
+  </body>
+</html>

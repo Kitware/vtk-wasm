@@ -1,0 +1,108 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Procedural terrain — VTK.wasm</title>
+    <script
+      src="https://unpkg.com/@kitware/vtk-wasm/vtk-umd.js"
+      id="vtk-wasm"
+      data-url="https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz"
+    ></script>
+    <script src="terrain.js"></script>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #0a0c0f;
+        color: #dfe6e4;
+        font-family: "IBM Plex Sans", system-ui, sans-serif;
+      }
+      #vtk-wasm-window {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        outline: none;
+      }
+      .hud {
+        position: fixed;
+        left: 14px;
+        bottom: 14px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 12px;
+        color: #9fadaa;
+        background: rgba(10, 12, 15, 0.72);
+        backdrop-filter: blur(8px);
+        border: 1px solid #1c242a;
+        border-radius: 8px;
+        padding: 8px 10px;
+      }
+      .hud button {
+        font: inherit;
+        color: #dfe6e4;
+        background: transparent;
+        border: 1px solid #263038;
+        border-radius: 5px;
+        padding: 5px 10px;
+        cursor: pointer;
+      }
+      .hud button[aria-pressed="true"] {
+        color: #0a0c0f;
+        background: #8db7f7;
+        border-color: #8db7f7;
+      }
+      .hud .sep {
+        color: #3a4a53;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- The interactor uses the right button (dolly/zoom in the terrain style),
+         so the browser context menu has to be suppressed or it swallows the
+         drag as soon as the button goes down. -->
+    <canvas
+      id="vtk-wasm-window"
+      tabindex="-1"
+      onclick="focus()"
+      oncontextmenu="return false"
+    ></canvas>
+
+    <div class="hud">
+      <button id="generate" disabled>Generate</button>
+      <span class="sep">·</span>
+      <span id="stats">building…</span>
+    </div>
+
+    <script>
+      // Belt and braces: the canvas attribute covers the element itself, this
+      // covers a right-drag that travels off the canvas mid-gesture.
+      window.addEventListener("contextmenu", (event) => event.preventDefault());
+
+      vtkwasm.ready.then(async (vtk) => {
+        const scene = await buildTerrainScene(vtk, "#vtk-wasm-window");
+        const generate = document.getElementById("generate");
+        const stats = document.getElementById("stats");
+
+        const summary = (suffix) =>
+          `${scene.stats.points.toLocaleString()} points · ` +
+          `${scene.stats.triangles.toLocaleString()} triangles · ${suffix}`;
+
+        stats.textContent = summary("generated in-browser");
+        generate.disabled = false;
+
+        // Rebuilding the whole surface is the point of the button: it shows the
+        // geometry is computed here, not shipped as a baked asset.
+        generate.addEventListener("click", async () => {
+          generate.disabled = true;
+          const ms = await scene.regenerate();
+          stats.textContent = summary(`rebuilt in ${Math.round(ms)} ms`);
+          generate.disabled = false;
+        });
+      });
+    </script>
+  </body>
+</html>

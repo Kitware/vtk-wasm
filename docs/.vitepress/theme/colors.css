@@ -13,31 +13,110 @@
     --vp-c-brand-1: #8DB7F7;
 }
 
-.viewers-items {
-    display: flex;
-    flex-wrap: wrap;
-    margin: -8px;
+/* ---------------------------------------------------------------------------
+   Landing palette — the single source of truth for site surface colours.
+   Authored dark-first from the Claude Design project "VTK.wasm landing page";
+   the light values are derived from it. `theme/components/Landing.vue` consumes
+   these `--ld-*` tokens directly, and the `--vp-*` remaps below point the
+   default theme (nav bar, sidebar, guide/news/API pages) at the same palette so
+   the landing does not read as a different site.
+
+   Accent: `--ld-acc` is the solid fill, `--ld-acc-on` the text that sits on that
+   fill, `--ld-acc-text` the contrast-safe variant for accent-coloured text.
+   --------------------------------------------------------------------------- */
+:root {
+    --ld-acc: #004ab9;
+    --ld-acc-on: #ffffff;
+    --ld-acc-text: #004ab9;
+    --ld-acc-hi: #2c68c0;
+    --ld-acc-glow: rgba(0, 74, 185, 0.1);
+
+    --ld-bg: #ffffff;
+    --ld-bg-alt: #f4f8f7;
+    --ld-surface: #ffffff;
+    --ld-surface-2: #f2f6f5;
+    --ld-surface-3: #eef4f2;
+    --ld-line: #dde5e3;
+    --ld-line-soft: #e8eeec;
+    --ld-text: #0d1a17;
+    --ld-body: #4b5a56;
+    --ld-dim: #56655f;
+    --ld-mute: #6d7c78;
 }
 
-.viewers-item {
-    padding: 8px;
-    width: 100%;
-    min-height: 300px;
+.dark {
+    --ld-acc: #8db7f7;
+    --ld-acc-on: #0a0c0f;
+    --ld-acc-text: #8db7f7;
+    --ld-acc-hi: #b3cdfa;
+    --ld-acc-glow: rgba(141, 183, 247, 0.1);
+
+    --ld-bg: #0a0c0f;
+    --ld-bg-alt: #0b0f13;
+    --ld-surface: #0d1216;
+    --ld-surface-2: #0f151a;
+    --ld-surface-3: #0a1013;
+    --ld-line: #1c242a;
+    --ld-line-soft: #151b20;
+    --ld-text: #f4f9f8;
+    --ld-body: #9fadaa;
+    --ld-dim: #8b9895;
+    --ld-mute: #6d7c79;
+
+    /* Default-theme surfaces: nav bar, sidebar, doc pages, code blocks. */
+    --vp-c-bg: var(--ld-bg);
+    --vp-c-bg-alt: var(--ld-bg-alt);
+    --vp-c-bg-elv: var(--ld-surface);
+    --vp-c-bg-soft: var(--ld-surface);
+    --vp-c-gutter: var(--ld-line-soft);
+
+    --vp-c-divider: var(--ld-line);
+    --vp-c-border: var(--ld-line);
+    --vp-c-gray-1: #263038;
+    --vp-c-gray-2: var(--ld-line);
+    --vp-c-gray-3: var(--ld-line-soft);
+
+    --vp-c-text-1: var(--ld-text);
+    --vp-c-text-2: var(--ld-body);
+    --vp-c-text-3: var(--ld-mute);
 }
 
-.viewers-item > iframe {
-    display: block;
-    border: 1px solid var(--vp-c-bg-soft);
-    border-radius: 12px;
-    height: 100%;
-    width: 100%;
-    background-color: var(--vp-c-bg-soft);
-    transition: border-color 0.25s, background-color 0.25s;
-    border: none;
+/* ---------------------------------------------------------------------------
+   Home page = a single full-bleed <Landing /> (theme/components/Landing.vue).
+   The default `home` layout still drops page content into a centred
+   `.vp-doc.container` and adds a trailing gap; undo both. Selectors are kept
+   long enough to outrank VitePress' scoped `[data-v-*]` rules.
+   --------------------------------------------------------------------------- */
+.VPContent.is-home .VPHome {
+    margin-bottom: 0;
 }
 
-@media (min-width: 768px) {
-    .viewers-grid-3 {
-        width: calc(100% / 3);
-    }
+.VPContent.is-home .vp-doc.container {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* `.vp-doc` prose styling (h2 rules, underlined links, code chips) is meant for
+   guide pages and would fight the landing's own type scale. Neutralise it. */
+.vp-doc .landing :is(h1, h2, h3) {
+    border-top: none;
+    padding-top: 0;
+}
+
+.vp-doc .landing a {
+    text-decoration: none;
+    font-weight: inherit;
+}
+
+.vp-doc .landing code {
+    background: none;
+    border-radius: 0;
+    padding: 0;
+    font-size: inherit;
+}
+
+.vp-doc .landing :is(pre, iframe) {
+    background: transparent;
+    margin: 0;
 }

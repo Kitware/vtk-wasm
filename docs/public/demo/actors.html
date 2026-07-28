@@ -1,0 +1,113 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>A thousand actors and more — VTK.wasm</title>
+    <script
+      src="https://unpkg.com/@kitware/vtk-wasm/vtk-umd.js"
+      id="vtk-wasm"
+      data-url="https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz"
+    ></script>
+    <script src="actors.js"></script>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #0a0c0f;
+        color: #dfe6e4;
+        font-family: "IBM Plex Sans", system-ui, sans-serif;
+      }
+      #vtk-wasm-window {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        outline: none;
+      }
+      .hud {
+        position: fixed;
+        left: 14px;
+        bottom: 14px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 12px;
+        color: #9fadaa;
+        background: rgba(10, 12, 15, 0.72);
+        backdrop-filter: blur(8px);
+        border: 1px solid #1c242a;
+        border-radius: 8px;
+        padding: 8px 10px;
+      }
+      .hud button {
+        font: inherit;
+        color: #dfe6e4;
+        background: transparent;
+        border: 1px solid #263038;
+        border-radius: 5px;
+        padding: 5px 10px;
+        cursor: pointer;
+      }
+      .hud button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      .hud b {
+        color: #f4f9f8;
+        font-weight: 500;
+      }
+      .hud .sep {
+        color: #3a4a53;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- The interactor uses the right button, so the context menu is suppressed
+         or it swallows the drag as soon as the button goes down. -->
+    <canvas
+      id="vtk-wasm-window"
+      tabindex="-1"
+      onclick="focus()"
+      oncontextmenu="return false"
+    ></canvas>
+
+    <div class="hud">
+      <button id="more" disabled>+1000 actors</button>
+      <span class="sep">·</span>
+      <span><b id="count">—</b> actors</span>
+      <span class="sep">·</span>
+      <span><b id="fps">—</b> fps</span>
+    </div>
+
+    <script>
+      window.addEventListener("contextmenu", (event) => event.preventDefault());
+
+      vtkwasm.ready.then(async (vtk) => {
+        const scene = await buildActorScene(vtk, "#vtk-wasm-window");
+        const more = document.getElementById("more");
+        const count = document.getElementById("count");
+        const fps = document.getElementById("fps");
+
+        const refresh = () => {
+          count.textContent = scene.actorCount.toLocaleString();
+          fps.textContent = scene.fps.toFixed(0);
+        };
+        refresh();
+        more.disabled = false;
+        setInterval(refresh, 250);
+
+        more.addEventListener("click", async () => {
+          more.disabled = true;
+          more.textContent = "adding…";
+          await scene.addActors(1000);
+          refresh();
+          more.textContent =
+            scene.actorCount >= scene.maxActors ? "limit reached" : "+1000 actors";
+          more.disabled = scene.actorCount >= scene.maxActors;
+        });
+      });
+    </script>
+  </body>
+</html>
