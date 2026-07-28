@@ -58,7 +58,7 @@ const tabs = [
 			{
 				num: '01',
 				title: 'Write VTK C++',
-				body: 'Your existing pipeline — readers, filters, mappers, actors. Unchanged.',
+				body: 'Leverage your existing pipeline with readers, filters, and rendering.',
 				code: 'main.cxx',
 			},
 			{
@@ -99,7 +99,7 @@ const tabs = [
 			{
 				num: '02',
 				title: 'Build the scene in Python',
-				body: 'Plain VTK Python — the same objects you already write.',
+				body: 'Leverage the simple pythonic interface to VTK',
 				code: 'vtkRenderWindow()',
 			},
 			{
@@ -132,7 +132,7 @@ const demos = [
 	{
 		href: withBase('/demo/terrain.html'),
 		title: 'Procedural terrain',
-		body: '351k triangles built in the browser — press Generate',
+		body: '351k triangles built in the browser, hit Generate',
 	},
 	{
 		href: withBase('/demo/viewer-starfighter2.html'),
@@ -142,12 +142,12 @@ const demos = [
 	{
 		href: withBase('/demo/volume.html'),
 		title: 'Volume rendering',
-		body: '531k voxels ray cast on the GPU — switch transfer functions',
+		body: '531k voxels ray cast on the GPU, change transfer function preset',
 	},
 	{
 		href: withBase('/demo/actors.html'),
 		title: 'A thousand actors and more',
-		body: 'Every object its own vtkActor — add more until the frame rate bends',
+		body: 'Every object its own vtkActor, add more to test performance',
 	},
 ]
 
