@@ -34,8 +34,9 @@ function makeRandom(seed) {
 async function buildActorScene(vtk, canvasSelector = "#vtk-wasm-window") {
   const cylinder = vtk.vtkCylinderSource();
   await cylinder.setResolution(16);
-  await cylinder.setCapping(true);
+  await cylinder.setCapping(1);
   const cube = vtk.vtkCubeSource();
+  const plane = vtk.vtkPlaneSource();
   const sphere = vtk.vtkSphereSource();
   await sphere.setThetaResolution(12);
   await sphere.setPhiResolution(10);
@@ -48,6 +49,7 @@ async function buildActorScene(vtk, canvasSelector = "#vtk-wasm-window") {
   const mappers = {
     cylinder: await makeMapper(cylinder),
     cube: await makeMapper(cube),
+    plane: await makeMapper(plane),
     sphere: await makeMapper(sphere),
   };
 
@@ -166,8 +168,7 @@ async function buildActorScene(vtk, canvasSelector = "#vtk-wasm-window") {
 
   // Layout is partitioned so equipment can never intersect: tank rows march
   // outward in +/-y, while the pipe corridor stays on a fixed y and only grows
-  // along x. An earlier version moved the corridor out with the ring, which put
-  // ring 2's pipes straight through ring 0's tanks.
+  // along x. Racks can intersect with each other.
   const RACK_Y = 55;
   const pending = [];
   const rackColumns = new Set();
@@ -219,19 +220,35 @@ async function buildActorScene(vtk, canvasSelector = "#vtk-wasm-window") {
 
   // Ground plane, then the opening plant.
   await addActor(
-    mappers.cube,
+    mappers.plane,
     [0, 0, -1],
     [900, 900, 2],
     [0, 0, 0],
-    [0.09, 0.1, 0.12],
+    [1.0, 1.0, 1.0],
   );
   await addBatch(1000 - actorCount);
 
-  const sun = vtk.vtkLight();
-  await sun.setPosition([-1, -0.8, 0.9]);
-  await sun.setFocalPoint([0, 0, 0]);
-  await sun.setIntensity(1.25);
-  await renderer.addLight(sun);
+  function computeLightPosition(rho, phi, theta) {
+    return [
+      rho * Math.sin(phi) * Math.cos(theta),
+      rho * Math.sin(phi) * Math.sin(theta),
+      rho * Math.cos(phi)
+    ];
+  }
+
+  const lightCoords = [
+    [1.0, -Math.PI * 0.25, -Math.PI * 0.25],
+    [1.0, -Math.PI * 0.25, Math.PI * 0.25],
+    [1.0, Math.PI * 0.25, -Math.PI * 0.25],
+    [1.0, Math.PI * 0.25, Math.PI * 0.25],
+  ]
+  lightCoords.forEach(async (coordinates) => {
+    const light = vtk.vtkLight();
+    await light.setPosition(computeLightPosition(...coordinates));
+    await light.setFocalPoint([0, 0, 0]);
+    await light.setIntensity(0.8);
+    await renderer.addLight(light);
+  })
 
   const camera = await renderer.getActiveCamera();
   await camera.setViewUp([0, 0, 1]);
