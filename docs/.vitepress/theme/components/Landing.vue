@@ -94,7 +94,7 @@ const tabs = [
 				num: '01',
 				title: 'Install the widget',
 				body: 'Alongside trame itself and a VTK wheel from wheels.vtk.org.',
-				code: 'pip install "trame-vtklocal>=0.16"',
+				code: 'pip install "trame-vtklocal"',
 			},
 			{
 				num: '02',
