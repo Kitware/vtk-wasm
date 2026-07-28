@@ -8,8 +8,11 @@ Our roadmap shows the objectives we have planned for the long term. Also check t
 import roadMapData from './features.json';
 </script>
 
-## Planned in next release (9.7.0)
+## Planned in next release
 <FeatureStatusTable version-group="planned" />
+
+## Released in 9.7.x
+<FeatureStatusTable version-group="implemented-in-9.7.x" />
 
 ## Released in 9.6.x
 <FeatureStatusTable version-group="implemented-in-9.6.x" />
