@@ -194,27 +194,18 @@ export class RemoteSession {
    * Fetch and register state inside the session
    *
    * @param {int} vtkId
-   * @returns fetched state as string
+   * @returns {object|null} the state of a VTK object, or null if the server has none
    */
   async fetchStateAsync(vtkId) {
     const serverState = await this.networkFetchState(vtkId);
-    const patchedState = this.patchState(serverState);
-    this.incrementProgress("state");
-    return patchedState;
-  }
-
-  /**
-   * Record the MTime of an incoming state.
-   *
-   * @param {str} state
-   * @returns {str} the unchanged state
-   */
-  patchState(state) {
-    if (state.length > 0) {
-      const { Id, MTime } = JSON.parse(state);
-      this.stateMTimes[Id] = MTime;
-      return state;
+    const state = serverState ? JSON.parse(serverState) : null;
+    if (state) {
+      this.stateMTimes[state.Id] = state.MTime;
+    } else {
+      delete this.stateMTimes[vtkId];
     }
+    this.incrementProgress("state");
+    return state;
   }
 
   /**
@@ -328,7 +319,10 @@ export class RemoteSession {
       };
       this.emitProgress();
       const pendingStates = statesToFetch.map((stateId) =>
-        this.fetchStateAsync(stateId),
+        this.fetchStateAsync(stateId).catch((e) => {
+          console.error(`Failed to fetch state ${stateId}`, e);
+          return null;
+        }),
       );
       const pendingHashes = hashesToFetch.map((hash) => this.fetchHashAsync(hash));
 
@@ -350,7 +344,7 @@ export class RemoteSession {
       while (statesToRegister.length) {
         const state = statesToRegister.pop();
         if (state) {
-          this.#native.registerState(JSON.parse(state));
+          this.#native.registerState(state);
         }
       }
 
