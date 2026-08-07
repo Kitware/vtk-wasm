@@ -33,6 +33,7 @@ export class RemoteSession {
     this.networkFetchState = null;
     this.networkFetchHash = null;
     this.networkFetchStatus = null;
+    this.networkFetchBatch = null;
     this.cameraIds = new Set();
     this.stateCache = {};
     this.progressCallbacks = new Set();
@@ -98,10 +99,11 @@ export class RemoteSession {
   /**
    * Inject network implementation for fetching state and blob
    */
-  bindNetwork(fetchState, fetchHash, fetchStatus) {
+  bindNetwork(fetchState, fetchHash, fetchStatus, fetchBatch=null) {
     this.networkFetchState = fetchState;
     this.networkFetchHash = fetchHash;
     this.networkFetchStatus = fetchStatus;
+    this.networkFetchBatch = fetchBatch;
   }
 
   /**
@@ -239,6 +241,47 @@ export class RemoteSession {
     this.incrementProgress("hash");
     return array;
   }
+  /**
+   * Fetch states and hashes in a batch and register them inside the session
+   *
+   * @param {list[str]} state_ids
+   * @param {list[str]} hashes
+   * @returns list of promises
+   */
+  async fetchBatchAsync(stateIds, hashKeys) {
+    let count = 0;
+    const { states, hashes } = await this.networkFetchBatch(stateIds, hashKeys);
+
+    // Handle hashes
+    const entries = Object.entries(hashes);
+    for (let i = 0; i < entries.length; i++) {
+      const [hash, array] = entries[i];
+      if (this.pendingArrays[hash]) {
+        await this.pendingArrays[hash];
+        this.hashesMTime[hash] = this.currentMTime;
+        delete this.pendingArrays[hash];
+      } else {
+        // regular network call
+        this.#native.registerBlob(hash, array);
+        this.hashesMTime[hash] = this.currentMTime;
+      }
+      this.incrementProgress("hash");
+      count++;
+    }
+
+    // Handle states after hashes
+    for (let i = 0; i < states.length; i++) {
+      const state = states[i];
+      if (!state) {
+        continue
+      }
+      this.incrementProgress("state");
+      this.#native.registerState(JSON.parse(this.patchState(state)));
+      count++;
+    }
+
+    return count;
+  }
 
   /**
    * Push blob to internal structure
@@ -327,10 +370,16 @@ export class RemoteSession {
         hash: { current: 0, total: hashesToFetch.length },
       };
       this.emitProgress();
-      const pendingStates = statesToFetch.map((stateId) =>
-        this.fetchStateAsync(stateId),
-      );
-      const pendingHashes = hashesToFetch.map((hash) => this.fetchHashAsync(hash));
+
+      const pendingWork = { states: [], hashes: [], batch: false };
+      if (this.networkFetchBatch) {
+        pendingWork.batch = this.fetchBatchAsync(statesToFetch, hashesToFetch);
+      } else {
+        pendingWork.states = statesToFetch.map((stateId) =>
+          this.fetchStateAsync(stateId),
+        );
+        pendingWork.hashes = hashesToFetch.map((hash) => this.fetchHashAsync(hash));
+      }
 
       // Capture cameras
       serverStatus.cameras.forEach((v) => this.cameraIds.add(Number(v)));
@@ -341,9 +390,12 @@ export class RemoteSession {
       );
 
       // Ensure completion of all network calls
-      await Promise.all(pendingHashes);
+      if (pendingWork.batch) {
+        await pendingWork.batch;
+      }
+      await Promise.all(pendingWork.hashes);
       await Promise.all(Object.values(this.pendingArrays));
-      const statesToRegister = await Promise.all(pendingStates);
+      const statesToRegister = await Promise.all(pendingWork.states);
       this.currentMTime++;
 
       // Register states in a synchronous manner to prevent intermixed render from interactor
