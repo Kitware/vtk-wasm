@@ -1,6 +1,7 @@
 import "./style.css";
 
 import { createInstantiatorProxy } from "./core/proxy";
+import { createHeapInterface, createTypedArrayInterface } from "./core/typedArrayInterface";
 import { addCanvasEventListeners, removeCanvasEventListeners } from "./core/canvasEventListeners";
 
 /**
@@ -15,6 +16,7 @@ export class RemoteSession {
   #disposed = false;
   #vtkProxyCache = null;
   #idToRef = null;
+  #typedArrayInterface = null;
 
   /**
    * @param {object} native - the C++ vtkRemoteSession instance.
@@ -81,6 +83,22 @@ export class RemoteSession {
   /** The underlying WASM module */
   get wasmModule() {
     return this.#module;
+  }
+
+  /**
+   * Marshalling between JavaScript TypedArrays and the wasm heap. Adds
+   * `toVTKAoSArray(typedArray, numberOfComponents, name)` — which creates the
+   * matching `vtkTypeXxxArray` in *this* session — to the pointer-level
+   * primitives of {@link VtkWasmRuntime#typedArrayInterface}.
+   */
+  get typedArrayInterface() {
+    if (!this.#typedArrayInterface) {
+      this.#typedArrayInterface = createTypedArrayInterface(
+        createHeapInterface(this.#module),
+        this.vtk,
+      );
+    }
+    return this.#typedArrayInterface;
   }
 
   /** Start event loop on the render window. */

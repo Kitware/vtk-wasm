@@ -1,5 +1,6 @@
 import { extractFilesFromGzipBundleAsync, fetchGzipBundleAsync } from "./core/gzipBundle";
 import { createMethodTableFromManifests, createMethodTableFromMergedIndex } from "./core/methodTable";
+import { createHeapInterface } from "./core/typedArrayInterface";
 import { createEmscriptenConfig, normalizeConfig, validateConfig } from "./core/configManager";
 import { DEFAULT_CONFIG, DEFAULT_WASM_BASE_NAME, DEFAULT_WASM_URL_IS_GZIP, MIME_TYPES } from "./core/constants";
 import { wasmModuleBaseNames } from "./core/wasmModuleNames";
@@ -204,6 +205,7 @@ export class VtkWasmRuntime {
   #key = null;
   #methodTable = null;
   #disposed = false;
+  #heapInterface = null;
 
   constructor(module, key, methodTable = null) {
     this.#module = module;
@@ -220,6 +222,20 @@ export class VtkWasmRuntime {
   /** The underlying Emscripten module. Escape hatch; prefer the session API. */
   get module() {
     return this.#module;
+  }
+
+  /**
+   * Pointer-level marshalling between JavaScript TypedArrays and the wasm heap:
+   * `alloc`, `free`, `copyToHeap`, `copyFromHeap`, `viewAt`. Creating VTK data
+   * arrays needs a session, so `toVTKAoSArray` lives on
+   * {@link StandaloneSession#typedArrayInterface} instead.
+   */
+  get heapInterface() {
+    this.#assertLive();
+    if (!this.#heapInterface) {
+      this.#heapInterface = createHeapInterface(this.#module);
+    }
+    return this.#heapInterface;
   }
 
   /** @returns {boolean} whether this runtime executes methods asynchronously (JSPI). */
