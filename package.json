@@ -55,9 +55,16 @@
     "vitepress-plugin-mermaid": "^2.0.17"
   },
   "types": "./types/index.d.ts",
+  "bin": {
+    "vtk-wasm": "bin/vtk-wasm.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "files": [
     "dist/**/*",
-    "types/**/*"
+    "types/**/*",
+    "bin/**"
   ],
   "exports": {
     ".": {
