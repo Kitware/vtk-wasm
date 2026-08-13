@@ -395,7 +395,7 @@ export class RemoteSession {
         // key. Until then, this code should not run. Instead, it relies
         // upon consumers having called the bindCanvas(renderWindowId, canvasOrId) method.
         // This issue is tracked in https://gitlab.kitware.com/vtk/vtk/-/work_items/20099
-        // const state = this.getVtkObject(vtkId).state;
+        // const state = this.getVtkObject(vtkId).$state;
         // const isRenderWindow =
         //   state?.className === "vtkRenderWindow" ||
         //   state?.superClassNames?.includes("vtkRenderWindow");

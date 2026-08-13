@@ -1,4 +1,4 @@
-import { toCxxName, toCxxKeys, toJsName, toJsKeys } from "./javaScriptCxxTranslators";
+import { toCxxKeys, toCxxName, toJsName, toJsKeys } from "./javaScriptCxxTranslators";
 
 
 export function createPropGetter(wasm, wrapMethods, vtkId) {
@@ -90,33 +90,36 @@ export function createVtkObjectProxy(
   const propGetters = createPropGetter(wasm, wrapMethods, vtkId);
   const propSetters = createPropSetter(wasm, wrapMethods, vtkId);
 
-  // Create proxy for given vtk object
+  // Plumbing members are $-prefixed so they can never collide
+  // with C++ members ($ is not legal in C++ names);
+  // toJSON/toString stay unprefixed because JSON.stringify and string
+  // coercion look them up by exactly those names.
   const target = {
-    id: vtkId,
-    obj: { Id: vtkId },
-    set,
-    observe,
+    $id: vtkId,
+    $obj: { Id: vtkId },
+    $set: set,
+    $observe: observe,
     toJSON,
     toString,
-    unObserve,
-    unObserveAll,
-    userData: {},
+    $unObserve: unObserve,
+    $unObserveAll: unObserveAll,
+    $userData: {},
   };
   const vtkProxy = new Proxy(target, {
     get(target, prop, resolver) {
       if (target[prop] !== undefined) {
         return target[prop];
       }
-      if (target.userData[prop] !== undefined) {
-        return target.userData[prop];
+      if (target.$userData[prop] !== undefined) {
+        return target.$userData[prop];
       }
       if (prop === "then") {
         return resolver;
       }
-      if (prop === "state") {
+      if (prop === "$state") {
         return toJsKeys(wasm.get(vtkId));
       }
-      if (prop === "delete") {
+      if (prop === "$delete") {
         return deleteObject;
       }
       if (propGetters[prop]) {
@@ -135,7 +138,7 @@ export function createVtkObjectProxy(
       if (propSetters[property]) {
         propSetters[property](value);
       } else {
-        target.userData[property] = value;
+        target.$userData[property] = value;
       }
       return true;
     },
@@ -157,7 +160,7 @@ export function createInstantiatorProxy(wasm, vtkProxyCache, idToRef) {
     const wrapped = {};
     Object.entries(kwargs).forEach(([k, v]) => {
       if (vtkProxyCache.has(v)) {
-        wrapped[k] = v.obj;
+        wrapped[k] = v.$obj;
       } else {
         wrapped[k] = v;
       }
@@ -166,7 +169,7 @@ export function createInstantiatorProxy(wasm, vtkProxyCache, idToRef) {
   }
 
   function decorateArgs(args) {
-    return args.map((v) => (vtkProxyCache.has(v) ? v.obj : v));
+    return args.map((v) => (vtkProxyCache.has(v) ? v.$obj : v));
   }
 
   const internalMethods = { isVtkObject, decorateKwargs, decorateArgs };
