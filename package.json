@@ -47,19 +47,28 @@
     "rimraf": "^6.0.1",
     "semantic-release": "25.0.2",
     "typedoc": "^0.28.19",
+    "typescript": "^6.0.3",
     "typedoc-plugin-markdown": "^4.12.0",
     "typedoc-vitepress-theme": "^1.1.3",
     "vite": "^6.2.4",
     "vitepress": "^1.6.3",
     "vitepress-plugin-mermaid": "^2.0.17"
   },
+  "types": "./types/index.d.ts",
   "files": [
-    "dist/**/*"
+    "dist/**/*",
+    "types/**/*"
   ],
   "exports": {
-    ".": "./dist/esm/index.mjs",
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./dist/esm/index.mjs"
+    },
     "./style.css": "./dist/esm/vtk-wasm.css",
-    "./viewer": "./dist/esm/viewer.mjs",
+    "./viewer": {
+      "types": "./types/viewer.d.ts",
+      "default": "./dist/esm/viewer.mjs"
+    },
     "./viewer-umd.js": "./dist/umd/viewer.umd.js",
     "./vtk-umd.js": "./dist/umd/vtk.umd.js",
     "./viewer.css": "./dist/umd/viewer.css",
