@@ -1,5 +1,6 @@
 {
   "name": "@kitware/vtk-wasm",
+  "type": "module",
   "version": "0.0.0",
   "description": "A WebAssembly port of the VTK library",
   "license": "Apache-2.0",
