@@ -1,8 +1,7 @@
 import { toCxxKeys, toCxxName, toJsName, toJsKeys } from "./javaScriptCxxTranslators";
 
 
-export function createPropGetter(wasm, wrapMethods, vtkId) {
-  const fullState = wasm.get(vtkId);
+export function createPropGetter(wasm, wrapMethods, vtkId, fullState) {
   const getPropHandler = {};
   Object.keys(fullState).forEach((propName) => {
     // console.log("Prop key:", propName);
@@ -12,8 +11,7 @@ export function createPropGetter(wasm, wrapMethods, vtkId) {
   return getPropHandler;
 }
 
-function createPropSetter(wasm, wrapMethods, vtkId) {
-  const fullState = wasm.get(vtkId);
+function createPropSetter(wasm, wrapMethods, vtkId, fullState) {
   const setPropHandler = {};
   Object.keys(fullState).forEach((propName) => {
     setPropHandler[toJsName(propName)] = (value) =>
@@ -28,6 +26,7 @@ export function createVtkObjectProxy(
   idToRef,
   wrapMethods,
   vtkId,
+  methodTable,
 ) {
   // Reuse vtkProxy if already available
   if (idToRef.has(vtkId) && idToRef.get(vtkId).deref()) {
@@ -87,8 +86,10 @@ export function createVtkObjectProxy(
     return toJsKeys(wasm.get(vtkId));
   }
   // Extract properties and unCapitalize them & add setter
-  const propGetters = createPropGetter(wasm, wrapMethods, vtkId);
-  const propSetters = createPropSetter(wasm, wrapMethods, vtkId);
+  const fullState = wasm.get(vtkId);
+  const className = fullState?.ClassName;
+  const propGetters = createPropGetter(wasm, wrapMethods, vtkId, fullState);
+  const propSetters = createPropSetter(wasm, wrapMethods, vtkId, fullState);
 
   // Plumbing members are $-prefixed so they can never collide
   // with C++ members ($ is not legal in C++ names);
@@ -122,16 +123,54 @@ export function createVtkObjectProxy(
       if (prop === "$delete") {
         return deleteObject;
       }
+      if (typeof prop !== "string") {
+        // Symbols (Symbol.toPrimitive, Symbol.toStringTag, ...) are protocol
+        // probes, never VTK methods.
+        return undefined;
+      }
       if (propGetters[prop]) {
         return propGetters[prop]();
       }
-      // ideally we should have a json structure to check available methods
-      target[prop] = async (...args) => {
-        const cxxName = toCxxName(prop);
-        const decoratedArgs = wrapMethods.decorateArgs(args);
-        const result = await invokeFn(vtkId, cxxName, decoratedArgs);
-        return wrapMethods.decorateResult(result);
-      };
+      // Method dispatch: only names the method table validates are invoked.
+      if (!methodTable) {
+        // fallback for old wasm package that didn't ship method table.
+        target[prop] = async (...args) => {
+          const cxxName = toCxxName(prop);
+          const decoratedArgs = wrapMethods.decorateArgs(args);
+          const result = await invokeFn(vtkId, cxxName, decoratedArgs);
+          return wrapMethods.decorateResult(result);
+        };
+        return target[prop];
+        // Remove fallback and uncomment when we drop support for wasm package that do not have method table.
+        // throw new Error(
+        //   `Cannot access '${prop}' on ${className}: no method manifest is available. ` +
+        //     "Load from a .tar.gz bundle that contains types/*.json, or host " +
+        //     "vtk-methods.json next to the .mjs/.wasm files.",
+        // );
+      }
+      const method = methodTable.lookup(className, prop);
+      if (!method) {
+        throw new TypeError(
+          methodTable.hasClass(className)
+            ? `'${prop}' is not a property or method of ${className}.`
+            : `Unknown class ${className}: cannot resolve '${prop}'.`,
+        );
+      }
+      if (method.maySuspend && typeof wasm.invokeAsync === "function") {
+        // [[vtk::maysuspend]] methods run on a JSPI-suspendable stack and
+        // return a Promise; callers are expected to `await` them.
+        target[prop] = (...args) =>
+          wasm
+            .invokeAsync(vtkId, method.cxxName, wrapMethods.decorateArgs(args))
+            .then((result) => wrapMethods.decorateResult(result));
+      } else {
+        // Everything else (and every method on sync builds, where invokeAsync
+        // does not exist) resolves synchronously and returns the value.
+        target[prop] = (...args) =>
+          wrapMethods.decorateResult(
+            wasm.invoke(vtkId, method.cxxName, wrapMethods.decorateArgs(args)),
+          );
+      }
       return target[prop];
     },
     set(target, property, value) {
@@ -151,7 +190,7 @@ export function createVtkObjectProxy(
   return vtkProxy;
 }
 
-export function createInstantiatorProxy(wasm, vtkProxyCache, idToRef) {
+export function createInstantiatorProxy(wasm, vtkProxyCache, idToRef, methodTable) {
   function isVtkObject(obj) {
     return vtkProxyCache.has(obj);
   }
@@ -185,6 +224,7 @@ export function createInstantiatorProxy(wasm, vtkProxyCache, idToRef) {
         idToRef,
         internalMethods,
         result.Id,
+        methodTable,
       );
     }
     return result;
@@ -198,6 +238,7 @@ export function createInstantiatorProxy(wasm, vtkProxyCache, idToRef) {
       idToRef,
       internalMethods,
       obj_or_id.Id || obj_or_id,
+      methodTable,
     );
   }
 
@@ -218,6 +259,7 @@ export function createInstantiatorProxy(wasm, vtkProxyCache, idToRef) {
       idToRef,
       internalMethods,
       vtkId,
+      methodTable,
     );
   }
 

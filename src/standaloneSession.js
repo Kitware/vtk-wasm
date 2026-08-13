@@ -16,15 +16,17 @@ export class StandaloneSession {
   /**
    * @param {object} native - the C++ vtkStandaloneSession instance.
    * @param {object} module - the Emscripten module (for specialHTMLTargets access).
+   * @param {object|null} [methodTable] - resolves method names and maySuspend
+   *        flags for the proxy (see src/core/methodTable.js).
    */
-  constructor(native, module) {
+  constructor(native, module, methodTable = null) {
     this.#native = native;
     this.#module = module;
     /**
      * The `vtk` namespace: call `vtk.vtkActor({ ... })` to create objects.
      * @type {object}
      */
-    this.vtk = createInstantiatorProxy(native, this.#vtkProxyCache, this.#idToRef);
+    this.vtk = createInstantiatorProxy(native, this.#vtkProxyCache, this.#idToRef, methodTable);
   }
 
   /** The underlying C++ session. Escape hatch; prefer {@link StandaloneSession#vtk}. */

@@ -1,4 +1,5 @@
 import { extractFilesFromGzipBundleAsync, fetchGzipBundleAsync } from "./core/gzipBundle";
+import { createMethodTableFromManifests, createMethodTableFromMergedIndex } from "./core/methodTable";
 import { createEmscriptenConfig, normalizeConfig, validateConfig } from "./core/configManager";
 import { DEFAULT_CONFIG, DEFAULT_WASM_BASE_NAME, DEFAULT_WASM_URL_IS_GZIP, MIME_TYPES } from "./core/constants";
 import { wasmModuleBaseNames } from "./core/wasmModuleNames";
@@ -84,19 +85,39 @@ async function importModuleFactoryAsync(moduleURL) {
 }
 
 /**
- * Resolve the glue module factory and the wasm binary descriptor (if any) for
- * the requested configuration. Returns `{ factory, wasmFile }`, where
- * `wasmFile` is non-null only when the binary had to be extracted from a gzip
- * bundle (so it can be handed to Emscripten).
+ * Fetch and parse the merged method index (`vtk-methods.json`) hosted next to
+ * loose `.mjs`/`.wasm` files. Returns a method table, or `null` when the file
+ * is absent or malformed (method calls will then throw with instructions).
+ */
+async function fetchMethodIndexAsync(url) {
+  const indexURL = `${url.replace(/\/+$/, "")}/vtk-methods.json`;
+  try {
+    const response = await fetch(indexURL);
+    if (!response.ok) {
+      return null;
+    }
+    return createMethodTableFromMergedIndex(await response.json());
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Resolve the glue module factory, the wasm binary descriptor (if any), and
+ * the method table for the requested configuration. `wasmFile` is non-null
+ * only when the binary had to be extracted from a gzip bundle (so it can be
+ * handed to Emscripten). `methodTable` is null when neither the bundle's
+ * `types/*.json` nor a hosted `vtk-methods.json` could be found.
  */
 async function loadModuleFactoryAsync(url, urlIsGzip, wasmBaseName, config) {
   if (urlIsGzip) {
     const gzipArrayBuffer = await fetchGzipBundleAsync(url);
-    const { js, wasm } = await extractFilesFromGzipBundleAsync(gzipArrayBuffer, config, wasmBaseName);
+    const { js, wasm, manifests } = await extractFilesFromGzipBundleAsync(gzipArrayBuffer, config, wasmBaseName);
     const javaScriptBlobURL = createBlobURL(exposeSpecialHTMLTargets(js.buffer), MIME_TYPES.JAVASCRIPT);
     try {
       const factory = await importModuleFactoryAsync(javaScriptBlobURL);
-      return { factory, wasmFile: wasm };
+      const methodTable = manifests ? createMethodTableFromManifests(manifests) : null;
+      return { factory, wasmFile: wasm, methodTable };
     } finally {
       // Safe to revoke now: the module is fully evaluated once import() resolves.
       disposeBlobURL(javaScriptBlobURL);
@@ -118,14 +139,14 @@ async function loadModuleFactoryAsync(url, urlIsGzip, wasmBaseName, config) {
     );
   }
   const factory = await importModuleFactoryAsync(scriptURL);
-  return { factory, wasmFile: null };
+  return { factory, wasmFile: null, methodTable: await fetchMethodIndexAsync(url) };
 }
 
 async function instantiateAsync(url, urlIsGzip, wasmBaseName, config, key) {
   try {
-    const { factory, wasmFile } = await loadModuleFactoryAsync(url, urlIsGzip, wasmBaseName, config);
+    const { factory, wasmFile, methodTable } = await loadModuleFactoryAsync(url, urlIsGzip, wasmBaseName, config);
     const module = await factory(createEmscriptenConfig(config, wasmFile));
-    const runtime = new VtkWasmRuntime(module, key);
+    const runtime = new VtkWasmRuntime(module, key, methodTable);
     RUNTIME_CACHE.set(key, runtime);
     return runtime;
   } finally {
@@ -181,11 +202,13 @@ export async function loadAsync(options = {}) {
 export class VtkWasmRuntime {
   #module = null;
   #key = null;
+  #methodTable = null;
   #disposed = false;
 
-  constructor(module, key) {
+  constructor(module, key, methodTable = null) {
     this.#module = module;
     this.#key = key;
+    this.#methodTable = methodTable;
   }
 
   /** The unique identifier for the wasm module that this runtime was created from.
@@ -210,7 +233,7 @@ export class VtkWasmRuntime {
    */
   createStandaloneSession() {
     this.#assertLive();
-    return new StandaloneSession(new this.#module.vtkStandaloneSession(), this.#module);
+    return new StandaloneSession(new this.#module.vtkStandaloneSession(), this.#module, this.#methodTable);
   }
 
   /**
@@ -219,7 +242,7 @@ export class VtkWasmRuntime {
    */
   createRemoteSession() {
     this.#assertLive();
-    return new RemoteSession(new this.#module.vtkRemoteSession(), this.#module);
+    return new RemoteSession(new this.#module.vtkRemoteSession(), this.#module, this.#methodTable);
   }
 
   /**

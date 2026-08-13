@@ -19,8 +19,10 @@ export class RemoteSession {
   /**
    * @param {object} native - the C++ vtkRemoteSession instance.
    * @param {object} wasmModule - the Emscripten module the session belongs to.
+   * @param {object|null} [methodTable] - resolves method names and maySuspend
+   *        flags for the proxy (see src/core/methodTable.js).
    */
-  constructor(native, wasmModule) {
+  constructor(native, wasmModule, methodTable = null) {
     this.#native = native;
     this.#module = wasmModule;
     //
@@ -50,7 +52,7 @@ export class RemoteSession {
     // vtkObject proxy handling (create + getVtkObject + result wrapping)
     this.#vtkProxyCache = new WeakMap();
     this.#idToRef = new Map();
-    this.vtk = createInstantiatorProxy(native, this.#vtkProxyCache, this.#idToRef);
+    this.vtk = createInstantiatorProxy(native, this.#vtkProxyCache, this.#idToRef, methodTable);
 
     // Do not let server-side window sizes override the client canvas size.
     // skipProperty matches the state's leaf ClassName (the server's concrete render

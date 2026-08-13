@@ -123,7 +123,7 @@ console.log("New position: ", camera.position);</pre>
 
 ## Call functions on objects
 
-Member functions are also accessed with `.` notation. These calls return `Promise` objects, so use `await` when you need the resolved result.
+Member functions are also accessed with `.` notation, using camelCase names. Most calls execute synchronously and return their result directly. Methods marked `[[vtk::maysuspend]]` in VTK (for example `renderWindow.render()` on WebGPU/JSPI builds) return a `Promise` instead — `await` them. Awaiting a synchronous result is harmless, so `await` is always safe. Method names are validated against the method manifests shipped in the `.tar.gz` bundle (or a hosted `vtk-methods.json`); calling an unknown name throws a `TypeError`.
 
 <Playground console-min-height=100px>
     <textarea data-lang="html" style="display:none"><!doctype html>
@@ -222,9 +222,9 @@ VTK provides array classes for typed data exchange. These arrays accept JavaScri
 <pre data-lang="js" style="display:none">
 const vtk = await vtkwasm.ready;
 const coordinates = vtk.vtkTypeFloat64Array();
-coordinates.number_of_components = 3;
-await coordinates.SetArray(new Float64Array([-1, -1, 0, 1, -1, 0]));
-console.log(await coordinates.GetTuple1(0));
+coordinates.numberOfComponents = 3;
+coordinates.setArray(new Float64Array([-1, -1, 0, 1, -1, 0]));
+console.log(coordinates.getTuple1(0));
 </pre>
 </Playground>
 
