@@ -83,6 +83,19 @@ export class RemoteSession {
 
   /** Start event loop on the render window. */
   startEventLoop(renderWindowId) {
+    // Ensure the canvas is bound before the loop starts: the per-update bind
+    // can fail while the render window object is still being deserialized, but
+    // by the time a caller starts the event loop the object provably exists,
+    // so binding here makes startup deterministic. Without it, the native
+    // StartEventLoop copies an unset canvas selector onto the interactor and
+    // the emscripten callback registration throws inside the loop's first
+    // tick, permanently breaking interaction for that view.
+    const rwId = Number(renderWindowId);
+    if (this.canvasTargets.has(rwId) && !this.boundRenderWindows.has(rwId)) {
+      if (this.#native.bindRenderWindow(rwId, this.getCanvasTarget(rwId))) {
+        this.boundRenderWindows.add(rwId);
+      }
+    }
     if (this.#native.startEventLoop(renderWindowId)) {
       this.renderWindowIdsWithRunningEventLoops.add(renderWindowId);
       return true;
@@ -403,8 +416,16 @@ export class RemoteSession {
         const isRenderWindow = this.canvasTargets.has(rwId);
         if (isRenderWindow) {
           if (!this.boundRenderWindows.has(rwId)) {
-            this.#native.bindRenderWindow(rwId, this.getCanvasTarget(rwId));
-            this.boundRenderWindows.add(rwId);
+            // Only mark the window bound when the native bind SUCCEEDED. The
+            // bind fails when the render window object has not yet been
+            // deserialized in this update; marking it bound anyway meant the
+            // canvas selector was never assigned, and the interactor's event
+            // callback registration later threw on the empty selector inside
+            // the event loop's first tick — killing the tick chain and leaving
+            // a page that renders but ignores all input.
+            if (this.#native.bindRenderWindow(rwId, this.getCanvasTarget(rwId))) {
+              this.boundRenderWindows.add(rwId);
+            }
           }
           if (rwId in this.renderWindowSizes) {
             const [w, h] = this.renderWindowSizes[rwId];
