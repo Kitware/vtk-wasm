@@ -278,7 +278,7 @@ export class RemoteSession {
         }
         results.push(state);
       } else {
-        delete this.stateMTimes[vtkId];
+        delete this.stateMTimes[stateIds[i]];
       }
       this.incrementProgress("state");
     }
