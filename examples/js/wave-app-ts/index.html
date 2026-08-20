@@ -35,6 +35,12 @@
         backdrop-filter: blur(8px);
         pointer-events: none;
       }
+      /* Kept in the layout (visibility, not display) so its measured area stays
+         stable and the observer below cannot oscillate. */
+      #overlay.hidden {
+        visibility: hidden;
+        opacity: 0;
+      }
       #overlay h1 {
         margin: 0 0 6px;
         font-size: 15px;
@@ -67,6 +73,31 @@
         <div id="stats">warming up…</div>
       </div>
     </div>
+    <script>
+      // On small viewports the overlay can swallow the scene. Hide it whenever
+      // it would cover more than half of the canvas.
+      (function () {
+        const MAX_AREA_FRACTION = 0.5;
+        const canvas = document.querySelector("#app > canvas");
+        const overlay = document.querySelector("#overlay");
+
+        function syncOverlay() {
+          const canvasBox = canvas.getBoundingClientRect();
+          const overlayBox = overlay.getBoundingClientRect();
+          const canvasArea = canvasBox.width * canvasBox.height;
+          const overlayArea = overlayBox.width * overlayBox.height;
+          overlay.classList.toggle(
+            "hidden",
+            canvasArea > 0 && overlayArea / canvasArea > MAX_AREA_FRACTION
+          );
+        }
+
+        const observer = new ResizeObserver(syncOverlay);
+        observer.observe(canvas);
+        observer.observe(overlay);
+        syncOverlay();
+      })();
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
