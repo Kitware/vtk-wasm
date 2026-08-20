@@ -87,73 +87,70 @@ async function applyPreset(vtk, property, name, [low, high]) {
   const preset = PRESETS[name];
   const color = vtk.vtkColorTransferFunction();
   for (const [t, r, g, b] of preset.color) {
-    await color.addRGBPoint(at(t), r, g, b);
+    color.addRGBPoint(at(t), r, g, b);
   }
   const opacity = vtk.vtkPiecewiseFunction();
   for (const [t, a] of preset.opacity) {
-    await opacity.addPoint(at(t), a);
+    opacity.addPoint(at(t), a);
   }
-  await property.setColor(color);
-  await property.setScalarOpacity(opacity);
+  property.setColor(color);
+  property.setScalarOpacity(opacity);
 }
 
 async function buildVolumeScene(vtk, canvasSelector = "#vtk-wasm-window") {
   const source = vtk.vtkRTAnalyticSource();
-  await source.setWholeExtent([
+  source.setWholeExtent(
     -HALF_EXTENT,
     HALF_EXTENT,
     -HALF_EXTENT,
     HALF_EXTENT,
     -HALF_EXTENT,
     HALF_EXTENT,
-  ]);
-  await source.update();
+  );
+  source.update();
 
   // Read the range back rather than hard-coding it, so the presets stay correct
   // if the extent or the source's defaults ever change.
-  const output = await source.getOutput();
-  const scalarRange = await (
-    await (await output.getPointData()).getScalars()
-  ).getRange();
+  const scalarRange = source.getOutput().pointData.getScalars().getRange();
 
   const mapper = vtk.vtkSmartVolumeMapper();
-  await mapper.setInputConnection(await source.getOutputPort());
+  mapper.setInputConnection(source.getOutputPort());
 
   const property = vtk.vtkVolumeProperty();
-  await property.setInterpolationTypeToLinear();
+  property.setInterpolationTypeToLinear();
   // Shading gives the field surface-like depth cues; without it the render is
   // a flat haze no matter how the opacity is tuned.
-  await property.setShade(1);
-  await property.setAmbient(0.3);
-  await property.setDiffuse(0.75);
-  await property.setSpecular(0.35);
-  await property.setSpecularPower(18);
-  await applyPreset(vtk, property, DEFAULT_PRESET, scalarRange);
+  property.setShade(1);
+  property.setAmbient(0.3);
+  property.setDiffuse(0.75);
+  property.setSpecular(0.35);
+  property.setSpecularPower(18);
+  applyPreset(vtk, property, DEFAULT_PRESET, scalarRange);
 
   const volume = vtk.vtkVolume({ mapper, property });
 
   const renderer = vtk.vtkRenderer({ background: [0.04, 0.05, 0.07] });
-  await renderer.addVolume(volume);
-  await renderer.resetCamera();
+  renderer.addVolume(volume);
+  renderer.resetCamera();
 
   // Oblique view: straight down an axis collapses the field's symmetry into
   // flat rings and hides the depth the ray cast is resolving.
-  const span = HALF_EXTENT * 2;
-  const camera = await renderer.getActiveCamera();
-  await camera.setPosition([-span * 0.95, -span * 0.72, span * 0.6]);
-  await camera.setFocalPoint([0, 0, 0]);
-  await camera.setViewUp([0, 0, 1]);
-  await renderer.resetCameraClippingRange();
+  const span = HALF_EXTENT * 4;
+  const camera = renderer.getActiveCamera();
+  camera.setPosition([-span * 0.95, -span * 0.72, span * 0.6]);
+  camera.setFocalPoint([0, 0, 0]);
+  camera.setViewUp([0, 0, 1]);
+  renderer.resetCameraClippingRange();
 
   const renderWindow = vtk.vtkRenderWindow({ canvasSelector });
-  await renderWindow.addRenderer(renderer);
+  renderWindow.addRenderer(renderer);
 
   const interactor = vtk.vtkRenderWindowInteractor({
     canvasSelector,
     renderWindow,
   });
-  await interactor.setInteractorStyle(vtk.vtkInteractorStyleTrackballCamera());
-  await interactor.start();
+  interactor.setInteractorStyle(vtk.vtkInteractorStyleTrackballCamera());
+  interactor.start();
 
   const side = HALF_EXTENT * 2 + 1;
   return {
@@ -164,8 +161,8 @@ async function buildVolumeScene(vtk, canvasSelector = "#vtk-wasm-window") {
       scalarRange,
     },
     async usePreset(name) {
-      await applyPreset(vtk, property, name, scalarRange);
-      await renderWindow.render();
+      applyPreset(vtk, property, name, scalarRange);
+      renderWindow.render();
     },
   };
 }

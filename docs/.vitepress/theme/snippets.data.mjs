@@ -13,7 +13,7 @@ const BUNDLE_URL =
   "https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz";
 
 const THEMES = { light: "github-light", dark: "github-dark" };
-const LANGS = ["html", "javascript", "cpp", "python"];
+const LANGS = ["html", "javascript", "typescript", "cpp", "python"];
 
 // The hero snippet is the annotation form from
 // public/demo/plain-javascript-annotation-wasm-registry.html — the shortest path
@@ -41,18 +41,43 @@ const vtk = session.vtk;
 
 const cone = vtk.vtkConeSource();
 const mapper = vtk.vtkPolyDataMapper();
-await mapper.SetInputConnection(await cone.GetOutputPort());
+mapper.setInputConnection(cone.getOutputPort());
 
 const actor = vtk.vtkActor({ mapper });
 const renderer = vtk.vtkRenderer();
-await renderer.addActor(actor);
+renderer.addActor(actor);
 
-const interactor = vtk.vtkRenderWindowInteractor({ canvasSelector });
 const canvasSelector = session.registerCanvas("!vtk-canvas", canvas);
+const interactor = vtk.vtkRenderWindowInteractor({ canvasSelector });
 const window = vtk.vtkRenderWindow({ interactor, canvasSelector });
-await window.addRenderer(renderer);
+window.addRenderer(renderer);
 await window.render();
-await interactor.start();
+interactor.start();
+`;
+
+const ts = `import { loadAsync, type StandaloneSession } from "@kitware/vtk-wasm";
+
+const runtime = await loadAsync({
+  url: "${BUNDLE_URL}",
+  rendering: "webgl", // or "webgpu"
+});
+const session: StandaloneSession = runtime.createStandaloneSession();
+const vtk = session.vtk;
+
+const cone = vtk.vtkConeSource({ resolution: 32 });
+const mapper = vtk.vtkPolyDataMapper();
+mapper.setInputConnection(cone.getOutputPort());
+
+const actor = vtk.vtkActor({ mapper });
+const renderer = vtk.vtkRenderer();
+renderer.addActor(actor);
+
+const canvasSelector = session.registerCanvas("!vtk-canvas", canvas);
+const interactor = vtk.vtkRenderWindowInteractor({ canvasSelector });
+const window = vtk.vtkRenderWindow({ interactor, canvasSelector });
+window.addRenderer(renderer);
+await window.render();
+interactor.start();
 `;
 
 const cpp = `#include <vtkActor.h>
@@ -112,6 +137,7 @@ server.start()`;
 const SNIPPETS = [
   { key: "hero", lang: "html", code: hero },
   { key: "js", lang: "javascript", code: js },
+  { key: "ts", lang: "typescript", code: ts },
   { key: "cpp", lang: "cpp", code: cpp },
   { key: "trame", lang: "python", code: trame },
 ];
