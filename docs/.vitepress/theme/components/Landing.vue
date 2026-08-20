@@ -12,6 +12,41 @@ import { data as snippets } from '../snippets.data.mjs'
 // pipeline, the JavaScript path is a load pipeline, and trame is neither.
 const tabs = [
 	{
+		id: 'ts',
+		label: 'TypeScript',
+		hint: 'typed bindings',
+		file: 'viewer.ts',
+		badge: 'generated .d.ts',
+		note: 'Types match the bundle you load.',
+		link: withBase('/guide/js/typescript'),
+		steps: [
+			{
+				num: '01',
+				title: 'Install the package',
+				body: 'The same package as the JavaScript path; types ship with it.',
+				code: 'npm i @kitware/vtk-wasm',
+			},
+			{
+				num: '02',
+				title: 'Generate declarations',
+				body: 'A CLI reads the per-class manifests out of your VTK.wasm bundle.',
+				code: 'npx vtk-wasm gen-types --url <bundle>',
+			},
+			{
+				num: '03',
+				title: 'Include the output',
+				body: 'Drop the .d.ts anywhere tsconfig already picks up, such as src/.',
+				code: 'src/vtk-wasm.gen.d.ts',
+			},
+			{
+				num: '04',
+				title: 'Write typed VTK',
+				body: 'Per-class methods, properties, and class-typed arguments all check.',
+				code: 'vtk.vtkConeSource({ resolution: 32 })',
+			},
+		],
+	},
+	{
 		id: 'js',
 		label: 'JavaScript',
 		hint: 'load a module',
@@ -118,7 +153,7 @@ const tabs = [
 	},
 ]
 
-const activeTab = ref('js')
+const activeTab = ref('ts')
 const active = computed(
 	() => tabs.find((tab) => tab.id === activeTab.value) || tabs[0],
 )
@@ -133,6 +168,16 @@ const demos = [
 		href: withBase('/demo/terrain.html'),
 		title: 'Procedural terrain',
 		body: '351k triangles built in the browser, hit Generate',
+	},
+	{
+		href: withBase('/demo/wave-app-ts/index.html'),
+		title: 'Dynamic mesh',
+		body: 'Render dynamic geometry',
+	},
+	{
+		href: withBase('/demo/simple-app/index.html'),
+		title: 'Scalar bar widget',
+		body: 'Scalar bar widget',
 	},
 	{
 		href: withBase('/demo/viewer-starfighter2.html'),
@@ -229,7 +274,7 @@ const latestRelease = computed(
 							<div class="ld-stat-label">script tag to first render</div>
 						</div>
 						<div class="ld-stat">
-							<div class="ld-stat-value">3</div>
+							<div class="ld-stat-value">4</div>
 							<div class="ld-stat-label">languages, one runtime</div>
 						</div>
 					</div>
@@ -256,7 +301,7 @@ const latestRelease = computed(
 		<section id="guides" class="ld-section ld-section-alt">
 			<div class="ld-wrap ld-split">
 				<div>
-					<div class="ld-eyebrow">Three entry points</div>
+					<div class="ld-eyebrow">Four entry points</div>
 					<h2 class="ld-h2">Pick the language you already write</h2>
 					<p class="ld-body">
 						Each path ends at the same WASM module. Start where your codebase
