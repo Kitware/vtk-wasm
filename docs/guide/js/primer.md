@@ -69,30 +69,30 @@ Once you have an object, inspection usually comes next. Use `toString()` to invo
 const camera = vtk.vtkCamera();
 // directly calls C++ vtkObject::Print()
 console.log(camera.toString());
-console.log(camera.state);
+console.log(camera.$state);
 // console.log("Camera proxy: ", camera.proxy);</pre>
 </Playground>
 
-The second `console.log` prints `camera.state` instead of `camera` because objects created through the `vtk` namespace are returned as JavaScript `Proxy` instances. In browser developer tools, the `state` property provides the most useful serialized view of that proxy.
+The second `console.log` prints `camera.$state` instead of `camera` because objects created through the `vtk` namespace are returned as JavaScript `Proxy` instances. In browser developer tools, the `$state` property provides the most useful serialized view of that proxy. Proxy plumbing members are `$`-prefixed so they never shadow a C++ property or method of the same name.
 
 The full proxy structure looks like this. Uncomment the last line to inspect it in the developer console:
 
 ```js
-Proxy(Object) {id: 1, obj: {…}, set: ƒ, observe: ƒ, toJSON: ƒ, …}
+Proxy(Object) {$id: 1, $obj: {…}, $set: ƒ, $observe: ƒ, toJSON: ƒ, …}
 [[Handler]] : Object
-    get : get(d,h,O){return d[h]!==void 0?d[h]:d.userData[h]!==void 0?d.userData[h]:h==="then"?O:h==="state"?e.get?V(e.get(n)):(e.updateStateFromObject(n),V(e.getState(n))):h==="delete"?a:l[h]?l[h]():(d[h]=async(...Ee)=> {…}
+    get : get(d,h,O){return d[h]!==void 0?d[h]:d.$userData[h]!==void 0?d.$userData[h]:h==="then"?O:h==="$state"?e.get?V(e.get(n)):(e.updateStateFromObject(n),V(e.getState(n))):h==="$delete"?a:l[h]?l[h]():(d[h]=async(...Ee)=> {…}
     set : ƒ set(d,h,O)
     [[Prototype]] : Object
 [[Target]] : Object
-    id : 1
-    obj : {Id: 1}
-    observe : ƒ p(d,h)
-    set : ƒ S(d)
+    $id : 1
+    $obj : {Id: 1}
+    $observe : ƒ p(d,h)
+    $set : ƒ S(d)
     toJSON : ƒ b()
     toString : ƒ u()
-    unObserve : ƒ c(d)
-    unObserveAll : ƒ o()
-    userData : {}
+    $unObserve : ƒ c(d)
+    $unObserveAll : ƒ o()
+    $userData : {}
     [[Prototype]] : Object
 [[IsRevoked]] : false
 ```
@@ -123,7 +123,7 @@ console.log("New position: ", camera.position);</pre>
 
 ## Call functions on objects
 
-Member functions are also accessed with `.` notation. These calls return `Promise` objects, so use `await` when you need the resolved result.
+Member functions are also accessed with `.` notation, using camelCase names. Most calls execute synchronously and return their result directly. Methods marked `[[vtk::maysuspend]]` in VTK (for example `renderWindow.render()` on WebGPU/JSPI builds) return a `Promise` instead — `await` them. Awaiting a synchronous result is harmless, so `await` is always safe. Method names are validated against the method manifests shipped in the `.tar.gz` bundle (or a hosted `vtk-methods.json`); calling an unknown name throws a `TypeError`.
 
 <Playground console-min-height=100px>
     <textarea data-lang="html" style="display:none"><!doctype html>
@@ -196,7 +196,7 @@ When an object is no longer needed, call `delete()` to release its external Java
 <pre data-lang="js" style="display:none">
 const vtk = await vtkwasm.ready;
 let actor = vtk.vtkActor();
-actor.delete();
+actor.$delete();
 // console.log(actor.toString()) // prints (null)
 actor = null;
 </pre>
@@ -222,9 +222,9 @@ VTK provides array classes for typed data exchange. These arrays accept JavaScri
 <pre data-lang="js" style="display:none">
 const vtk = await vtkwasm.ready;
 const coordinates = vtk.vtkTypeFloat64Array();
-coordinates.number_of_components = 3;
-await coordinates.SetArray(new Float64Array([-1, -1, 0, 1, -1, 0]));
-console.log(await coordinates.GetTuple1(0));
+coordinates.numberOfComponents = 3;
+coordinates.setArray(new Float64Array([-1, -1, 0, 1, -1, 0]));
+console.log(coordinates.getTuple1(0));
 </pre>
 </Playground>
 
@@ -255,7 +255,7 @@ console.log(`Part name: ${actor.partName}`);
 
 ## Observers
 
-For interactive workflows, register event handlers with `observe()`. Remove a handler later by passing its returned tag to `object.unObserve()`.
+For interactive workflows, register event handlers with `$observe()`. Remove a handler later by passing its returned tag to `object.$unObserve()`.
 
 <Playground>
     <textarea data-lang="html" style="display:none"><!doctype html>
@@ -273,11 +273,11 @@ For interactive workflows, register event handlers with `observe()`. Remove a ha
 <pre data-lang="js" style="display:none">
 const vtk = await vtkwasm.ready;
 const actor = vtk.vtkActor();
-const tag = actor.observe('ModifiedEvent', () => { console.log("Actor modified"); });
+const tag = actor.$observe('ModifiedEvent', () => { console.log("Actor modified"); });
 actor.visibility = false;
 actor.visibility = true;
 actor.visibility = false;
-actor.unObserve(tag);
+actor.$unObserve(tag);
 actor.visibility = true;
 </pre>
 </Playground>

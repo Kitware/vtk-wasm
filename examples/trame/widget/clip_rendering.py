@@ -105,12 +105,12 @@ class Clip(TrameApp):
                 function setupWidget() {{
                     const widget = trame.refs.{self.ctx.wasm_view.ref_name}.getVtkObject({self.ctx.wasm_view.register_vtk_object(self.widget)});
                     const plane = trame.refs.{self.ctx.wasm_view.ref_name}.getVtkObject({self.ctx.wasm_view.register_vtk_object(self.plane)});
-                    widget.observe("InteractionEvent", () => {{
+                    widget.$observe("InteractionEvent", () => {{
                         plane.origin = widget.widgetRepresentation.origin;
                         plane.normal = widget.widgetRepresentation.normal;
                     }});
-                    console.log("widget", widget.id);
-                    console.log("plane", plane.id);
+                    console.log("widget", widget.$id);
+                    console.log("plane", plane.$id);
                 }}
                 window.setupWidget = setupWidget;
             """)

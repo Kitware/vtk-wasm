@@ -30,11 +30,14 @@ export async function fetchGzipBundleAsync(url) {
 }
 
 /**
- * Extract the JavaScript and WebAssembly files from gzip bundle.
- * @param {ArrayBuffer} contents 
- * @param {object} config 
- * @param {string} wasmBaseName 
- * @returns {Promise<{js: {name: string, buffer: ArrayBufferLike}, wasm: {name: string, buffer: ArrayBufferLike}}>}
+ * Extract the JavaScript and WebAssembly files from gzip bundle, along with
+ * the per-class serdes manifests (`types/<vtkClass>.json`) when the bundle
+ * ships them. Manifests are returned as raw JSON text keyed by class name;
+ * they are parsed lazily by the method table.
+ * @param {ArrayBuffer} contents
+ * @param {object} config
+ * @param {string} wasmBaseName
+ * @returns {Promise<{js: {name: string, buffer: ArrayBufferLike}, wasm: {name: string, buffer: ArrayBufferLike}, manifests: Map<string, string> | null}>}
  */
 export async function extractFilesFromGzipBundleAsync(contents, config, wasmBaseName) {
   const files = await untar(contents);
@@ -49,8 +52,15 @@ export async function extractFilesFromGzipBundleAsync(contents, config, wasmBase
     const jsFile = files.find((file) => stripLeadingDotSlash(file.name) === jsFileMatch);
     const wasmFile = files.find((file) => stripLeadingDotSlash(file.name) === wasmFileMatch);
     if (jsFile !== undefined && wasmFile !== undefined) {
-      return { js: jsFile, wasm: wasmFile };
+      const decoder = new TextDecoder();
+      const manifests = new Map();
+      for (const file of files) {
+        const match = stripLeadingDotSlash(file.name).match(/(?:^|\/)types\/(vtk[^/]+)\.json$/);
+        if (match) {
+          manifests.set(match[1], decoder.decode(file.buffer));
+        }
+      }
+      return { js: jsFile, wasm: wasmFile, manifests: manifests.size > 0 ? manifests : null };
     }
   }
-  throw new Error(`Could not find expected wasm module files (any of ${tried.join(", ")}) in the gzip bundle`);
 }

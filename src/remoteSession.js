@@ -1,6 +1,7 @@
 import "./style.css";
 
 import { createInstantiatorProxy } from "./core/proxy";
+import { createHeapInterface, createTypedArrayInterface } from "./core/typedArrayInterface";
 import { addCanvasEventListeners, removeCanvasEventListeners } from "./core/canvasEventListeners";
 
 /**
@@ -15,12 +16,15 @@ export class RemoteSession {
   #disposed = false;
   #vtkProxyCache = null;
   #idToRef = null;
+  #typedArrayInterface = null;
 
   /**
    * @param {object} native - the C++ vtkRemoteSession instance.
    * @param {object} wasmModule - the Emscripten module the session belongs to.
+   * @param {object|null} [methodTable] - resolves method names and maySuspend
+   *        flags for the proxy (see src/core/methodTable.js).
    */
-  constructor(native, wasmModule) {
+  constructor(native, wasmModule, methodTable = null) {
     this.#native = native;
     this.#module = wasmModule;
     //
@@ -50,7 +54,7 @@ export class RemoteSession {
     // vtkObject proxy handling (create + getVtkObject + result wrapping)
     this.#vtkProxyCache = new WeakMap();
     this.#idToRef = new Map();
-    this.vtk = createInstantiatorProxy(native, this.#vtkProxyCache, this.#idToRef);
+    this.vtk = createInstantiatorProxy(native, this.#vtkProxyCache, this.#idToRef, methodTable);
 
     // Do not let server-side window sizes override the client canvas size.
     // skipProperty matches the state's leaf ClassName (the server's concrete render
@@ -79,6 +83,22 @@ export class RemoteSession {
   /** The underlying WASM module */
   get wasmModule() {
     return this.#module;
+  }
+
+  /**
+   * Marshalling between JavaScript TypedArrays and the wasm heap. Adds
+   * `toVTKAoSArray(typedArray, numberOfComponents, name)` — which creates the
+   * matching `vtkTypeXxxArray` in *this* session — to the pointer-level
+   * primitives of {@link VtkWasmRuntime#typedArrayInterface}.
+   */
+  get typedArrayInterface() {
+    if (!this.#typedArrayInterface) {
+      this.#typedArrayInterface = createTypedArrayInterface(
+        createHeapInterface(this.#module),
+        this.vtk,
+      );
+    }
+    return this.#typedArrayInterface;
   }
 
   /** Start event loop on the render window. */
@@ -408,7 +428,7 @@ export class RemoteSession {
         // key. Until then, this code should not run. Instead, it relies
         // upon consumers having called the bindCanvas(renderWindowId, canvasOrId) method.
         // This issue is tracked in https://gitlab.kitware.com/vtk/vtk/-/work_items/20099
-        // const state = this.getVtkObject(vtkId).state;
+        // const state = this.getVtkObject(vtkId).$state;
         // const isRenderWindow =
         //   state?.className === "vtkRenderWindow" ||
         //   state?.superClassNames?.includes("vtkRenderWindow");

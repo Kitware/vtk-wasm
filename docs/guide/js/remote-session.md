@@ -189,14 +189,14 @@ Once synchronized, inspect objects locally without another round trip via [`getS
 
 The server owns the scene's object lifecycle, so a remote session **cannot create or destroy objects** from the client. The `remote.vtk` namespace exists only to *control existing* objects: use [`getVtkObject`](/api/@kitware/vtk-wasm/classes/RemoteSession#getvtkobject) (or `remote.vtk.getVtkObject(id)`) to obtain a proxy for an object the server already created.
 
-Calling a constructor such as `remote.vtk.vtkActor()` or `proxy.delete()` is a no-op: it logs a warning to the console and returns `undefined` / `false` rather than mutating the scene. To add or remove objects, do it on the server and pull the change in with [`update`](#drive-updates).
+Calling a constructor such as `remote.vtk.vtkActor()` or `proxy.$delete()` is a no-op: it logs a warning to the console and returns `undefined` / `false` rather than mutating the scene. To add or remove objects, do it on the server and pull the change in with [`update`](#drive-updates).
 
 ```js
 const actor = remote.getVtkObject(actorId); // ✅ control an existing object
 actor.visibility = false;
 
 remote.vtk.vtkActor();                       // ⚠️ warns, returns undefined
-actor.delete();                              // ⚠️ warns, returns false
+actor.$delete();                             // ⚠️ warns, returns false
 ```
 
 ## Cleaning up

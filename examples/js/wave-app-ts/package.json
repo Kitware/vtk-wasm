@@ -1,0 +1,23 @@
+{
+  "name": "wave-app-ts",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "gen:types": "npx vtk-wasm gen-types --url public/vtk-9.7.20260811-wasm32-emscripten.tar.gz --out src/vtk-wasm.gen.d.ts",
+    "prepare:types": "npm run gen:types",
+    "typecheck": "tsc --noEmit",
+    "predev": "npm run prepare:types",
+    "dev": "vite",
+    "prebuild": "npm run prepare:types",
+    "build": "npm run typecheck && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@kitware/vtk-wasm": "file:../../.."
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "vite": "^6.3.5"
+  }
+}

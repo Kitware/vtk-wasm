@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VTK.wasm TypeScript wave example</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #05070f;
+        color: #e8eef8;
+        font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      #app {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+      }
+      #app > canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      #overlay {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        max-width: 22rem;
+        padding: 14px 18px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 10px;
+        background: rgba(6, 12, 26, 0.55);
+        backdrop-filter: blur(8px);
+        pointer-events: none;
+      }
+      #overlay h1 {
+        margin: 0 0 6px;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      #overlay p {
+        margin: 0;
+        font-size: 12.5px;
+        color: rgba(232, 238, 248, 0.7);
+      }
+      #stats {
+        margin-top: 10px;
+        font-variant-numeric: tabular-nums;
+        font-size: 12.5px;
+        color: #7fd8e8;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <canvas tabindex="-1" onclick="focus()"></canvas>
+      <div id="overlay">
+        <h1>Procedural wave surface</h1>
+        <p>
+          VTK.wasm owns the mesh; JavaScript rewrites its point positions,
+          normals and scalars every frame through zero-copy views onto the wasm
+          heap. Drag to orbit, scroll to zoom.
+        </p>
+        <div id="stats">warming up…</div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
