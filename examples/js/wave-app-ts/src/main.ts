@@ -12,7 +12,7 @@ import { loadAsync } from "@kitware/vtk-wasm";
 // the vertex data. Every frame the point positions, normals and scalars are
 // rewritten in place through zero-copy TypedArray views onto the wasm heap —
 // no per-frame allocation, no copies, no pipeline re-execution.
-const BUNDLE_URL = "/vtk-9.7.20260811-wasm32-emscripten.tar.gz";
+const BUNDLE_URL = "https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz";
 const CANVAS_SELECTOR = "#app > canvas";
 
 /** Quads per side of the surface: (RESOLUTION + 1)^2 points. */

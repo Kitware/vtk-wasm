@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "gen:types": "npx vtk-wasm gen-types --url public/vtk-9.7.20260811-wasm32-emscripten.tar.gz --out src/vtk-wasm.gen.d.ts",
+    "gen:types": "npx vtk-wasm gen-types --url https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz --out src/vtk-wasm.gen.d.ts",
     "prepare:types": "npm run gen:types",
     "typecheck": "tsc --noEmit",
     "predev": "npm run prepare:types",
