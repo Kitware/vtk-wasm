@@ -50,7 +50,45 @@ Here we tag the script to autoload WASM directly from the VTK repository's packa
 
 The `data-config` attribute on the annotation `<script>` accepts the same settings as the options object passed to `loadAsync(...)` — for example, add `data-config='{"rendering": "webgpu"}'` to switch the rendering backend. See [Loading VTK.wasm](./loading.md) for what each option does, or the [`loadAsync` reference](/api/@kitware/vtk-wasm/functions/loadAsync) for the exact option types.
 
-## Bundler
+
+## Bundler with TypeScript
+
+`@kitware/vtk-wasm` ships hand-written types for the runtime and session API. See
+[TypeScript types](./typescript.md).
+
+### Project setup
+
+The example below is a [Vite](https://vite.dev/) + TypeScript app; the full code
+lives [here](https://github.com/Kitware/vtk-wasm/tree/main/examples/js/wave-app-ts).
+Three pieces wire the types together:
+
+- **`gen:types`** runs `vtk-wasm gen-types --url <bundle> --out src/vtk-wasm.gen.d.ts`
+  against the same URL `main.ts` passes to `loadAsync`. Keeping one URL for both
+  guarantees the declarations describe the binary that actually runs.
+- **`predev` / `prebuild`** call it, so the declarations are refreshed before
+  every dev server start and every build, so that you don't accidentally use stale types.
+- **`tsconfig.json`** has `"include": ["src"]`, which picks up the generated file
+  automatically. `build` runs `tsc --noEmit` before `vite build`, so a scene that
+  no longer matches the bundle fails the build instead of the browser showing a runtime type error.
+
+::: code-group
+<<< ../../../examples/js/wave-app-ts/package.json
+<<< ../../../examples/js/wave-app-ts/tsconfig.json
+<<< ../../../examples/js/wave-app-ts/index.html
+<<< ../../../examples/js/wave-app-ts/src/main.ts [src/main.ts]
+```bash [Install/Build]
+npm install
+npm run build
+```
+:::
+
+### Result
+
+<iframe src="/vtk-wasm/demo/wave-app-ts/index.html" style="width: 100%; height: 25vh; border: none;"></iframe>
+
+[Full Screen Viewer](../../demo/wave-app-ts/index.html){target="_blank"}
+
+## Bundler with pure Javascript
 
 Modern web development relies on a package manager to bring in project dependencies. This section covers how published releases are used within a JavaScript project.
 
@@ -62,7 +100,6 @@ In this simple example we use [Vite](https://vite.dev/) with Vanilla JavaScript.
 <<< ../../../examples/js/simple-app/package.json
 <<< ../../../examples/js/simple-app/index.html
 <<< ../../../examples/js/simple-app/src/main.js [src/main.js]
-<<< ../../../examples/js/simple-app/src/example.js [src/example.js]
 <<< ../../../examples/js/simple-app/src/style.css [src/style.css]
 ```bash [Install/Build]
 npm install
