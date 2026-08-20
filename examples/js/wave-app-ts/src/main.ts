@@ -1,4 +1,4 @@
-import { loadAsync } from "@kitware/vtk-wasm";
+import { loadAsync, vtkInteractorStyleSwitch } from "@kitware/vtk-wasm";
 
 // This app loads the VTK.wasm bundle it was typed against. `session.vtk` is
 // fully typed because `npm run gen:types` ran `vtk-wasm gen-types` against the
@@ -238,6 +238,7 @@ async function main(): Promise<void> {
     renderWindow,
     canvasSelector: CANVAS_SELECTOR,
   });
+  (interactor.getInteractorStyle() as vtkInteractorStyleSwitch).setCurrentStyleToTrackballCamera();
   interactor.start();
 
   const statsElement = document.querySelector<HTMLElement>("#stats");
