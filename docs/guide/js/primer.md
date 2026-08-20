@@ -140,12 +140,12 @@ Member functions are also accessed with `.` notation, using camelCase names. Mos
 </html></textarea>
     <pre data-lang="js" style="display:none">const vtk = await vtkwasm.ready;
 const camera = vtk.vtkCamera();
-await camera.azimuth(10.0);
+camera.azimuth(10.0);
 console.log("New position after azimuth: ", camera.position);
 const renderer = vtk.vtkRenderer();
 console.log("Old active camera at: ", renderer.activeCamera.position)
 renderer.activeCamera = camera;
-// await renderer.setActiveCamera(camera); // same as above
+// renderer.setActiveCamera(camera); // same as above
 console.log("New active camera at: ", renderer.activeCamera.position);</pre>
 </Playground>
 
@@ -171,7 +171,7 @@ const camera = vtk.vtkCamera();
 camera.position = [10, 20, 30];
 const renderer = vtk.vtkRenderer();
 console.log("Old active camera at: ", renderer.activeCamera.position)
-await renderer.setActiveCamera(camera);
+renderer.setActiveCamera(camera);
 // renderer.activeCamera = camera; // same as above
 console.log("New active camera at: ", renderer.activeCamera.position);</pre>
 </Playground>
@@ -319,20 +319,20 @@ const mesh = vtk.vtkPartitionedDataSetCollectionSource({
     numberOfShapes: 1
 });
 const mapper = vtk.vtkCompositePolyDataMapper();
-await mapper.setInputConnection(await mesh.getOutputPort());
+mapper.setInputConnection(mesh.getOutputPort());
 const actor = vtk.vtkActor({mapper})
 const renderer = vtk.vtkRenderer({background: [0.2, 0.2, 0.2]});
 renderer.addViewProp(actor);
 const canvasSelector = "#vtk-wasm-window";
 const renderWindow = vtk.vtkRenderWindow({ canvasSelector });
-await renderWindow.addRenderer(renderer);
+renderWindow.addRenderer(renderer);
 const interactor = vtk.vtkRenderWindowInteractor({
     canvasSelector,
     renderWindow,
 });
-await renderer.resetCamera();
-await interactor.interactorStyle.setCurrentStyleToTrackballCamera();
-await interactor.start();</pre>
+renderer.resetCamera();
+interactor.interactorStyle.setCurrentStyleToTrackballCamera();
+interactor.start();</pre>
 </Playground>
 
 ## WebGL2 rendering into a canvas without an `id`
@@ -381,17 +381,17 @@ const mesh = vtk.vtkPartitionedDataSetCollectionSource({
     numberOfShapes: 1
 });
 const mapper = vtk.vtkCompositePolyDataMapper();
-await mapper.setInputConnection(await mesh.getOutputPort());
+mapper.setInputConnection(mesh.getOutputPort());
 const actor = vtk.vtkActor({mapper})
 const renderer = vtk.vtkRenderer({background: [0.2, 0.2, 0.2]});
 renderer.addViewProp(actor);
 const renderWindow = vtk.vtkRenderWindow({ canvasSelector });
-await renderWindow.addRenderer(renderer);
+renderWindow.addRenderer(renderer);
 const interactor = vtk.vtkRenderWindowInteractor({
     canvasSelector,
     renderWindow,
 });
-await renderer.resetCamera();
-await interactor.interactorStyle.setCurrentStyleToTrackballCamera();
-await interactor.start();</pre>
+renderer.resetCamera();
+interactor.interactorStyle.setCurrentStyleToTrackballCamera();
+interactor.start();</pre>
 </Playground>
