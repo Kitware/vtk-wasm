@@ -164,7 +164,7 @@ function buildTriangles(resolution) {
 // --- scene -----------------------------------------------------------------
 
 /** Hypsometric ramp over normalised elevation: valley green -> rock -> snow. */
-async function createElevationRamp(vtk) {
+function createElevationRamp(vtk) {
   const ctf = vtk.vtkColorTransferFunction();
   const stops = [
     [0.0, 0.16, 0.24, 0.2],
@@ -176,14 +176,15 @@ async function createElevationRamp(vtk) {
     [1.0, 1.0, 1.0, 1.0],
   ];
   for (const [t, r, g, b] of stops) {
-    await ctf.addRGBPoint(t, r, g, b);
+    ctf.addRGBPoint(t, r, g, b);
   }
   return ctf;
 }
 
-async function buildTerrainScene(vtk, canvasSelector = "#vtk-wasm-window") {
+function buildTerrainScene(vtk, canvasSelector = "#vtk-wasm-window") {
   const RESOLUTION = 420;
   const EXTENT = 100;
+  const typedArrayInterface = vtkwasm.session.typedArrayInterface;
 
   let parameters = OPENING_PARAMETERS;
   const first = buildHeightField(RESOLUTION, EXTENT, parameters);
@@ -194,73 +195,62 @@ async function buildTerrainScene(vtk, canvasSelector = "#vtk-wasm-window") {
   const { offsets, connectivity } = buildTriangles(RESOLUTION);
 
   // Bulk-upload geometry. Each setArray/setData is a single call into wasm.
-  const pointArray = vtk.vtkFloatArray();
-  await pointArray.setNumberOfComponents(3);
-  await pointArray.setArray(coordinates);
   const points = vtk.vtkPoints();
-  await points.setData(pointArray);
+  points.setData(typedArrayInterface.toVTKAoSArray(coordinates, 3, "points"));
 
-  const offsetArray = vtk.vtkTypeInt32Array();
-  await offsetArray.setArray(offsets);
-  const connectivityArray = vtk.vtkTypeInt32Array();
-  await connectivityArray.setArray(connectivity);
   const polys = vtk.vtkCellArray();
-  await polys.setData(offsetArray, connectivityArray);
-
-  const elevationArray = vtk.vtkFloatArray();
-  await elevationArray.setName("Elevation");
-  await elevationArray.setNumberOfComponents(1);
-  await elevationArray.setArray(elevation);
+  polys.setData(typedArrayInterface.toVTKAoSArray(offsets),
+    typedArrayInterface.toVTKAoSArray(connectivity));
 
   const polyData = vtk.vtkPolyData();
-  await polyData.setPoints(points);
-  await polyData.setPolys(polys);
-  await (await polyData.getPointData()).setScalars(elevationArray);
+  polyData.setPoints(points);
+  polyData.setPolys(polys);
+  polyData.pointData.setScalars(typedArrayInterface.toVTKAoSArray(elevation, 1, "Elevation"));
 
   // Smooth shading; the feature angle keeps ridge lines crisp.
   const normals = vtk.vtkPolyDataNormals();
-  await normals.setInputData(polyData);
-  await normals.setFeatureAngle(75);
-  await normals.update();
+  normals.setInputData(polyData);
+  normals.setFeatureAngle(75);
+  normals.update();
 
   const mapper = vtk.vtkPolyDataMapper({
-    lookupTable: await createElevationRamp(vtk),
+    lookupTable: createElevationRamp(vtk),
   });
-  await mapper.setInputConnection(await normals.getOutputPort());
-  await mapper.setScalarRange([0, 1]);
+  mapper.setInputConnection(normals.getOutputPort());
+  mapper.setScalarRange([0, 1]);
 
   const actor = vtk.vtkActor({ mapper });
-  await actor.property.setDiffuse(1.0);
-  await actor.property.setAmbient(0.12);
-  await actor.property.setSpecular(0.08);
+  actor.property.setDiffuse(1.0);
+  actor.property.setAmbient(0.12);
+  actor.property.setSpecular(0.08);
 
   const renderer = vtk.vtkRenderer({ background: [0.05, 0.07, 0.1] });
-  await renderer.addActor(actor);
+  renderer.addActor(actor);
 
   // Low sun angle so the relief reads through shading, not just colour.
   const sun = vtk.vtkLight();
-  await sun.setPosition([-1, -0.6, 0.55]);
-  await sun.setFocalPoint([0, 0, 0]);
-  await sun.setIntensity(1.35);
-  await renderer.addLight(sun);
+  sun.setPosition([-1, -0.6, 0.55]);
+  sun.setFocalPoint([0, 0, 0]);
+  sun.setIntensity(1.35);
+  renderer.addLight(sun);
 
-  const camera = await renderer.getActiveCamera();
-  await camera.setViewUp([0, 0, 1]);
-  await camera.setViewAngle(34);
+  const camera = renderer.getActiveCamera();
+  camera.setViewUp([0, 0, 1]);
+  camera.setViewAngle(34);
 
   // Frame from the patch extent and the tallest peak rather than hard-coded
   // numbers: relief varies between generations, and a fixed eye point ends up
   // buried inside a slope on some of them.
-  async function frameCamera() {
+  function frameCamera() {
     const half = EXTENT * 0.5;
-    await camera.setPosition([-half * 1.55, -half * 1.55, maxElevation * 1.3]);
-    await camera.setFocalPoint([0, 0, maxElevation * 0.22]);
-    await renderer.resetCameraClippingRange();
+    camera.setPosition([-half * 1.55, -half * 1.55, maxElevation * 1.3]);
+    camera.setFocalPoint([0, 0, maxElevation * 0.22]);
+    renderer.resetCameraClippingRange();
   }
-  await frameCamera();
+  frameCamera();
 
   const renderWindow = vtk.vtkRenderWindow({ canvasSelector });
-  await renderWindow.addRenderer(renderer);
+  renderWindow.addRenderer(renderer);
 
   const interactor = vtk.vtkRenderWindowInteractor({
     canvasSelector,
@@ -273,9 +263,9 @@ async function buildTerrainScene(vtk, canvasSelector = "#vtk-wasm-window") {
   // silently leaves the default style in place. Construct the style and assign
   // it instead. Terrain keeps the up vector pinned, so dragging orbits the
   // horizon rather than tumbling the landscape.
-  await interactor.setInteractorStyle(vtk.vtkInteractorStyleTerrain());
+  interactor.setInteractorStyle(vtk.vtkInteractorStyleTerrain());
 
-  await interactor.start();
+  interactor.start();
 
   return {
     interactor,
@@ -296,11 +286,11 @@ async function buildTerrainScene(vtk, canvasSelector = "#vtk-wasm-window") {
       parameters = randomTerrainParameters();
       const next = buildHeightField(RESOLUTION, EXTENT, parameters);
       maxElevation = next.maxElevation;
-      await pointArray.setArray(next.coordinates);
-      await elevationArray.setArray(next.elevation);
-      await points.modified();
-      await polyData.modified();
-      await frameCamera();
+      points.setData(typedArrayInterface.toVTKAoSArray(next.coordinates, 3, "points"));
+      polyData.pointData.setScalars(typedArrayInterface.toVTKAoSArray(next.elevation));
+      points.modified();
+      polyData.modified();
+      frameCamera();
       await renderWindow.render();
       return performance.now() - start;
     },

@@ -82,8 +82,8 @@
       // covers a right-drag that travels off the canvas mid-gesture.
       window.addEventListener("contextmenu", (event) => event.preventDefault());
 
-      vtkwasm.ready.then(async (vtk) => {
-        const scene = await buildTerrainScene(vtk, "#vtk-wasm-window");
+      vtkwasm.ready.then((vtk) => {
+        const scene = buildTerrainScene(vtk, "#vtk-wasm-window");
         const generate = document.getElementById("generate");
         const stats = document.getElementById("stats");
 
