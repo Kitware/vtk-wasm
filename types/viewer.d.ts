@@ -1,4 +1,9 @@
-// Hand-written declarations for @kitware/vtk-wasm/viewer.
+/**
+ * Hand-written declarations for `@kitware/vtk-wasm/viewer`: load a serialized
+ * VTK scene (`.vtk-wasm` export) into a remote session and display it.
+ *
+ * @module @kitware/vtk-wasm/viewer
+ */
 
 import type { RemoteSession, LoadOptions } from "./base.js";
 

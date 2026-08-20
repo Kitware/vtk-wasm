@@ -155,28 +155,7 @@ async function instantiateAsync(url, urlIsGzip, wasmBaseName, config, key) {
   }
 }
 
-/**
- * Load the VTK.wasm runtime and return a {@link VtkWasmRuntime} ready to create
- * sessions. Runtimes are cached per (url, wasmBaseName, rendering, exec), so
- * repeated calls with the same options share a single WebAssembly module.
- *
- * If you want to pipe std::cout/std::cerr to the console, pass `print`/`printErr`.
- *
- * @param {object} [options]
- * @param {string} [options.url] - Directory or .tar.gz bundle to load VTK.wasm from.
- *        Ignored when the glue script is already present on the page.
- * @param {boolean} [options.urlIsGzip] - (default is `true`) specifies whether the 
- *        resource at `options.url` is a Gzip archive.
- * @param {string} [options.wasmBaseName] - Base name of the wasm bundle (default "vtk").
- * @param {"webgl"|"webgpu"} [options.rendering] - Rendering backend (default "webgl").
- * @param {"sync"|"async"} [options.exec] - Method execution mode (default "sync").
- *        With new single-binary bundles this only affects which legacy file is
- *        preferred when present; the proxy feature-detects `invokeAsync` at
- *        runtime. With old split bundles, "async" loads the `...Async` binary.
- * @param {Function} [options.print] - std::cout sink.
- * @param {Function} [options.printErr] - std::cerr sink.
- * @returns {Promise<VtkWasmRuntime>}
- */
+// Documented as `loadAsync` in types/base.d.ts.
 export async function loadAsync(options = {}) {
   const {
     url = "loaded-module",
@@ -197,9 +176,7 @@ export async function loadAsync(options = {}) {
   return RUNTIME_PROMISES.get(key);
 }
 
-/**
- * A loaded VTK.wasm WebAssembly module. Acts as the single factory for sessions.
- */
+// Documented as `VtkWasmRuntime` in types/base.d.ts.
 export class VtkWasmRuntime {
   #module = null;
   #key = null;
@@ -213,23 +190,14 @@ export class VtkWasmRuntime {
     this.#methodTable = methodTable;
   }
 
-  /** The unique identifier for the wasm module that this runtime was created from.
-   *  Looks like: `url::wasmBaseName::config.rendering::config.exec` */
   get id() {
     return this.#key
   }
   
-  /** The underlying Emscripten module. Escape hatch; prefer the session API. */
   get module() {
     return this.#module;
   }
 
-  /**
-   * Pointer-level marshalling between JavaScript TypedArrays and the wasm heap:
-   * `alloc`, `free`, `copyToHeap`, `copyFromHeap`, `viewAt`. Creating VTK data
-   * arrays needs a session, so `toVTKAoSArray` lives on
-   * {@link StandaloneSession#typedArrayInterface} instead.
-   */
   get heapInterface() {
     this.#assertLive();
     if (!this.#heapInterface) {
@@ -238,34 +206,22 @@ export class VtkWasmRuntime {
     return this.#heapInterface;
   }
 
-  /** @returns {boolean} whether this runtime executes methods asynchronously (JSPI). */
   isAsync() {
     return typeof this.#module?.isAsync === "function" && this.#module.isAsync();
   }
 
-  /**
-   * Create an in-browser standalone session.
-   * @returns {StandaloneSession}
-   */
   createStandaloneSession() {
     this.#assertLive();
     return new StandaloneSession(new this.#module.vtkStandaloneSession(), this.#module, this.#methodTable);
   }
 
-  /**
-   * Create a server-driven remote session.
-   * @returns {RemoteSession}
-   */
   createRemoteSession() {
     this.#assertLive();
     return new RemoteSession(new this.#module.vtkRemoteSession(), this.#module, this.#methodTable);
   }
 
-  /**
-   * Drop this runtime from the shared cache and release the module reference.
-   * Note: Emscripten cannot reclaim a runtime's heap before page reload;
-   * disposing individual sessions is what actually frees C++ memory.
-   */
+  // Emscripten cannot reclaim a runtime's heap before page reload; disposing
+  // individual sessions is what actually frees C++ memory.
   dispose() {
     if (this.#disposed) {
       return;

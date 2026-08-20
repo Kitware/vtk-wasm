@@ -1,34 +1,13 @@
-/**
- * Public entry point of `@kitware/vtk-wasm`: load the runtime and create
- * standalone or remote sessions.
- *
- * @module @kitware/vtk-wasm
- */
+// Public entry point of `@kitware/vtk-wasm`. The public API is documented on
+// the declarations in types/base.d.ts, which is what TypeDoc renders.
 import { loadAsync, VtkWasmRuntime } from "./runtime";
 import { StandaloneSession } from "./standaloneSession";
 import { RemoteSession } from "./remoteSession";
 
 export { loadAsync, VtkWasmRuntime, StandaloneSession, RemoteSession };
 
-/**
- * If the script is tagged with id="vtk-wasm", the runtime is loaded
- * automatically and `ready` resolves to the VTK namespace. Reach it via the
- * UMD global (`vtkwasm.ready`) or an ESM import
- * (`import { ready } from "@kitware/vtk-wasm"`). The owning standalone session
- * is kept module-private.
- *
- * Possible data attributes:
- *  - data-url="url to load VTK.wasm from" only needed if VTK.wasm is not already loaded.
- *  - data-config="{ rendering: 'webgl|webgpu', exec: 'sync|async' }" json config for
- *    WASM module configuration.
- */
 export let ready;
 
-/**
- * The {@link StandaloneSession} created by the annotation auto-load. Set after
- * `ready` resolves; `undefined` before then and when auto-load is not active.
- * Use it to call `session.registerCanvas()` and similar helpers.
- */
 export let session;
 
 if (typeof window !== "undefined") {

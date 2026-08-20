@@ -4,12 +4,7 @@ import { createInstantiatorProxy } from "./core/proxy";
 import { createHeapInterface, createTypedArrayInterface } from "./core/typedArrayInterface";
 import { addCanvasEventListeners, removeCanvasEventListeners } from "./core/canvasEventListeners";
 
-/**
- * A server-driven VTK session. Wraps a C++ `vtkRemoteSession` and synchronizes
- * object state fetched over the network into the local WebAssembly scene.
- *
- * Obtain one from {@link VtkWasmRuntime#createRemoteSession}.
- */
+// Documented as `RemoteSession` in types/base.d.ts.
 export class RemoteSession {
   #native = null;
   #module = null;
@@ -75,22 +70,14 @@ export class RemoteSession {
     this.#module?._setDefaultInstallHTMLResizeObserver?.(false);
   }
 
-  /** The underlying C++ session. Escape hatch; prefer {@link RemoteSession#vtk}. */
   get native() {
     return this.#native;
   }
 
-  /** The underlying WASM module */
   get wasmModule() {
     return this.#module;
   }
 
-  /**
-   * Marshalling between JavaScript TypedArrays and the wasm heap. Adds
-   * `toVTKAoSArray(typedArray, numberOfComponents, name)` — which creates the
-   * matching `vtkTypeXxxArray` in *this* session — to the pointer-level
-   * primitives of {@link VtkWasmRuntime#typedArrayInterface}.
-   */
   get typedArrayInterface() {
     if (!this.#typedArrayInterface) {
       this.#typedArrayInterface = createTypedArrayInterface(
@@ -101,7 +88,6 @@ export class RemoteSession {
     return this.#typedArrayInterface;
   }
 
-  /** Start event loop on the render window. */
   startEventLoop(renderWindowId) {
     // Ensure the canvas is bound before the loop starts: the per-update bind
     // can fail while the render window object is still being deserialized, but
@@ -123,15 +109,11 @@ export class RemoteSession {
     return false;
   }
 
-  /** Stop event loop on the render window. */
   stopEventLoop(renderWindowId) {
     this.renderWindowIdsWithRunningEventLoops.delete(renderWindowId);
     return this.#native.stopEventLoop(renderWindowId);
   }
 
-  /**
-   * Inject network implementation for fetching state and blob
-   */
   bindNetwork(fetchState, fetchHash, fetchStatus, fetchBatch=null) {
     this.networkFetchState = fetchState;
     this.networkFetchHash = fetchHash;
@@ -139,12 +121,6 @@ export class RemoteSession {
     this.networkFetchBatch = fetchBatch;
   }
 
-  /**
-   * Register a callback to monitor download progress.
-   *
-   * @param {Function} callback
-   * @returns {Function} cleanup function
-   */
   addProgressCallback(callback) {
     if (callback) {
       this.progressCallbacks.add(callback);
@@ -185,12 +161,6 @@ export class RemoteSession {
     this.emitProgress();
   }
 
-  /**
-   * Free old blobs if they go beyond the allowed cache size in Bytes
-   * starting with the older ones.
-   *
-   * @param {int} cacheSize
-   */
   freeMemory(cacheSize = 0) {
     const memArrays = this.#native.getTotalBlobMemoryUsage();
     const threshold = Number(cacheSize);
@@ -225,12 +195,6 @@ export class RemoteSession {
     }
   }
 
-  /**
-   * Fetch and decode state, the registration still needs to be done.
-   *
-   * @param {int} vtkId
-   * @returns {object|null} the state of a VTK object, or null if the server has none
-   */
   async fetchStateAsync(vtkId) {
     const serverState = await this.networkFetchState(vtkId);
     const state = serverState ? JSON.parse(serverState) : null;
@@ -243,12 +207,6 @@ export class RemoteSession {
     return state;
   }
 
-  /**
-   * Fetch and register blob inside the session
-   *
-   * @param {str} hash
-   * @returns typed array matching blob content
-   */
   async fetchHashAsync(hash) {
     let array;
     // pendingArray only filled via pushHashAsync
@@ -265,13 +223,6 @@ export class RemoteSession {
     this.incrementProgress("hash");
     return array;
   }
-  /**
-   * Combine fetchStateAsync and fetchHashAsync but from a single network call.
-   *
-   * @param {list[int]} vtkIds
-   * @param {list[str]} hashes
-   * @returns {list[states]}
-   */
   async fetchBatchAsync(stateIds, hashKeys) {
     const results = [];
     const { states, hashes } = await this.networkFetchBatch(stateIds, hashKeys);
@@ -300,11 +251,6 @@ export class RemoteSession {
     return results;
   }
 
-  /**
-   * Push blob to internal structure
-   * @param {str} hash
-   * @param {TypedArry or Blob} arrayOrBlob
-   */
   pushHashAsync(hash, arrayOrBlob) {
     this.pendingArrays[hash] = new Promise((resolve) => {
       if (arrayOrBlob.arrayBuffer) {
@@ -322,11 +268,6 @@ export class RemoteSession {
     return this.pendingArrays[hash];
   }
 
-  /**
-   * Update object with its dependencies to match remote version.
-   *
-   * @param {int} vtkId
-   */
   updateAsync(vtkId) {
     const id = Number(vtkId);
     // Coalesce: a queued (not-yet-started) run for this id will capture the
@@ -349,10 +290,7 @@ export class RemoteSession {
 
   /**
    * Fetch and register the remote state for `vtkId`, then render it if it is a
-   * bound render window. Serialized via {@link RemoteSession#updateAsync}; do
-   * not call directly.
-   *
-   * @param {int} vtkId
+   * bound render window. Serialized via `updateAsync`; do not call directly.
    */
   async #doUpdateAsync(vtkId) {
     try {
@@ -468,12 +406,6 @@ export class RemoteSession {
     }
   }
 
-  /**
-   * Helper to retrieve local object state
-   *
-   * @param {int} vtkId
-   * @returns state of given vtk object
-   */
   getState(vtkId, useCache = false) {
     const wasmId = Number(vtkId);
     if (useCache && this.stateCache[wasmId]) {
@@ -482,19 +414,10 @@ export class RemoteSession {
     return this.#native.get(wasmId);
   }
 
-  /**
-   * Clear state cache
-   */
   clearStateCache() {
     this.stateCache = {};
   }
 
-  /**
-   * Helper to query local object value for a given property
-   *
-   * @param {Array or vtkId} valuePath
-   * @returns property value
-   */
   getStateValue(valuePath, useCache = false) {
     const expression = Array.isArray(valuePath) ? valuePath : [valuePath];
     let value = null;
@@ -512,14 +435,6 @@ export class RemoteSession {
     return value;
   }
 
-  /**
-   * Return the native event-target string for the canvas registered to a render
-   * window. This is a `specialHTMLTargets` key when the build exposes that map,
-   * otherwise a CSS selector. Pass it to `native.bindRenderWindow`.
-   *
-   * @param {int} renderWindowId
-   * @returns {string} the event-target string for the given canvas
-   */
   getCanvasTarget(renderWindowId) {
     const entry = this.canvasTargets.get(Number(renderWindowId));
     if (!entry) {
@@ -531,21 +446,6 @@ export class RemoteSession {
     return entry.target;
   }
 
-  /**
-   * Associate a render window with a user-provided canvas and install the
-   * interaction listeners on it.
-   *
-   * RemoteSession never creates, moves, or removes canvas elements: the caller
-   * owns the canvas lifecycle. The canvas may be passed as the element itself or
-   * as the `id` of an element already in the DOM. When the Emscripten build
-   * exposes `specialHTMLTargets`, the element is registered there directly, so it
-   * needs neither an `id` nor to be attached to the document; otherwise the
-   * element must have an `id` so a CSS selector can be used as a fallback.
-   *
-   * @param {int} renderWindowId
-   * @param {HTMLCanvasElement|string} canvasOrId - the canvas element or its DOM `id`.
-   * @returns {string} the native event-target string (see {@link RemoteSession#getCanvasTarget}).
-   */
   bindCanvas(renderWindowId, canvasOrId) {
     const rwId = Number(renderWindowId);
     const canvas =
@@ -580,13 +480,6 @@ export class RemoteSession {
     return target;
   }
 
-  /**
-   * Remove the interaction listeners installed by {@link RemoteSession#bindCanvas}
-   * and forget the render window -> canvas mapping. The canvas element itself is
-   * left untouched.
-   *
-   * @param {int} renderWindowId
-   */
   unbindCanvas(renderWindowId) {
     const rwId = Number(renderWindowId);
     const entry = this.canvasTargets.get(rwId);
@@ -605,13 +498,6 @@ export class RemoteSession {
     this.canvasTargets.delete(rwId);
   }
 
-  /**
-   * Set size to the given RenderWindow
-   *
-   * @param {int} renderWindowId
-   * @param {int} width
-   * @param {int} height
-   */
   async setSizeAsync(renderWindowId, width, height) {
     const rwId = Number(renderWindowId);
     this.renderWindowSizes[rwId] = [width, height];
@@ -628,36 +514,14 @@ export class RemoteSession {
     }
   }
 
-  /**
-   * Get a helper proxy for controlling the vtkObject available on the WASM side.
-   *
-   * The returned proxy exposes:
-   * - `id` — the WASM id, and `obj` — the id wrapped as `{ Id: wasmId }`.
-   * - `state` — the full object state.
-   * - `delete()` — remove the object from the WASM stack.
-   * - `set(kwargs)` — update a batch of properties at once.
-   * - `observe(eventName, fn) -> tag` / `unObserve(tag)` / `unObserveAll()` — manage listeners.
-   * - each VTK property as a getter/setter, and each VTK method as an async call.
-   *
-   * @param {number} vtkId - wasm id for the given vtkObject
-   * @returns {object} the vtkObject proxy
-   */
   getVtkObject(vtkId) {
     return this.vtk.getVtkObject(vtkId);
   }
 
-  /**
-   * @returns {boolean}
-   */
   get disposed() {
     return this.#disposed;
   }
 
-  /**
-   * Free the C++ session and detach the interaction listeners installed on the
-   * user-provided canvases. The canvas elements themselves are left untouched.
-   * The session is unusable afterwards.
-   */
   dispose() {
     if (this.#disposed) {
       return;

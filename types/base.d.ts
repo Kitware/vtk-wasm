@@ -236,8 +236,9 @@ export type JSTypedArrayOf<T> = T extends { $brands: { vtkFloatArray: true } }
                       : MarshallableTypedArray;
 
 /**
- * Pointer-level marshalling between JavaScript TypedArrays and the wasm heap.
- * Available as {@link VtkWasmRuntime.typedArrayInterface}.
+ * Pointer-level marshalling between JavaScript TypedArrays and the wasm heap:
+ * `alloc`, `free`, `copyToHeap`, `copyFromHeap`, `viewAt`. Available as
+ * {@link VtkWasmRuntime.heapInterface}.
  */
 export interface HeapInterface {
   /** Whether this build addresses memory with 64-bit (BigInt) pointers. */
@@ -310,101 +311,294 @@ export interface TypedArrayInterface extends HeapInterface {
   ): JSTypedArrayOf<T>;
 }
 
-/** An in-browser VTK session wrapping a C++ `vtkStandaloneSession`. */
+/**
+ * An in-browser VTK session. Wraps a C++ `vtkStandaloneSession` and exposes the
+ * `vtk` namespace proxy used to instantiate and drive VTK objects.
+ *
+ * Obtain one from {@link VtkWasmRuntime.createStandaloneSession}.
+ */
 export class StandaloneSession {
   /** The `vtk` namespace: call `vtk.vtkActor({ ... })` to create objects. */
   readonly vtk: VtkNamespace;
   /** The underlying C++ session. Escape hatch; prefer {@link StandaloneSession.vtk}. */
   readonly native: object;
+  /** The underlying WASM module. */
   readonly wasmModule: object;
-  /** Marshalling between TypedArrays and the wasm heap, bound to this session. */
+  /**
+   * Marshalling between JavaScript TypedArrays and the wasm heap. Adds
+   * `toVTKAoSArray(typedArray, numberOfComponents, name)` — which creates the
+   * matching `vtkTypeXxxArray` in *this* session — to the pointer-level
+   * primitives of {@link VtkWasmRuntime.heapInterface}.
+   */
   readonly typedArrayInterface: TypedArrayInterface;
+  /** Whether {@link StandaloneSession.dispose} has already run. */
   readonly disposed: boolean;
   /**
    * Register `canvas` under `key` in `specialHTMLTargets` so it can be used as
-   * a `canvasSelector` without a DOM `id`. `key` must start with `!`.
+   * a `canvasSelector` without requiring a DOM `id`. The key must start with
+   * `!` (Emscripten convention). Returns `key` for convenience.
+   *
+   * @param key - selector key, e.g. `"!my-canvas"`.
+   * @param canvas - the canvas element to register.
    */
   registerCanvas(key: string, canvas: HTMLCanvasElement): string;
-  /** Free the C++ session and all objects it owns. */
+  /**
+   * Free the C++ session and all objects it owns, and drop proxy caches.
+   * The session is unusable afterwards.
+   */
   dispose(): void;
   [Symbol.dispose](): void;
 }
 
-/** A server-driven VTK session wrapping a C++ `vtkRemoteSession`. */
+/**
+ * A server-driven VTK session. Wraps a C++ `vtkRemoteSession` and synchronizes
+ * object state fetched over the network into the local WebAssembly scene.
+ *
+ * Obtain one from {@link VtkWasmRuntime.createRemoteSession}.
+ */
 export class RemoteSession {
   /** The `vtk` namespace proxy. */
   readonly vtk: VtkNamespace;
+  /** The underlying C++ session. Escape hatch; prefer {@link RemoteSession.vtk}. */
   readonly native: object;
+  /** The underlying WASM module. */
   readonly wasmModule: object;
-  /** Marshalling between TypedArrays and the wasm heap, bound to this session. */
+  /**
+   * Marshalling between JavaScript TypedArrays and the wasm heap. Adds
+   * `toVTKAoSArray(typedArray, numberOfComponents, name)` — which creates the
+   * matching `vtkTypeXxxArray` in *this* session — to the pointer-level
+   * primitives of {@link VtkWasmRuntime.heapInterface}.
+   */
   readonly typedArrayInterface: TypedArrayInterface;
-  readonly disposed: Boolean;
+  /** Whether {@link RemoteSession.dispose} has already run. */
+  readonly disposed: boolean;
+  /** Render window ids currently bound to a canvas. */
+  readonly boundRenderWindows: Set<number>;
+
+  /** Inject the network implementation used to fetch state and blobs. */
   bindNetwork(
     fetchState: (vtkId: number) => unknown,
     fetchHash: (hash: string) => unknown,
     fetchStatus: (...args: any[]) => unknown,
+    fetchBatch?:
+      | ((
+          vtkIds: number[],
+          hashes: string[],
+        ) => Promise<{ states: unknown[]; hashes: Record<string, unknown> }>)
+      | null,
   ): void;
+
+  /**
+   * Associate a render window with a user-provided canvas and install the
+   * interaction listeners on it.
+   *
+   * RemoteSession never creates, moves, or removes canvas elements: the caller
+   * owns the canvas lifecycle. The canvas may be passed as the element itself
+   * or as the `id` of an element already in the DOM. When the Emscripten build
+   * exposes `specialHTMLTargets`, the element is registered there directly, so
+   * it needs neither an `id` nor to be attached to the document; otherwise the
+   * element must have an `id` so a CSS selector can be used as a fallback.
+   *
+   * @param renderWindowId - id of the render window to bind.
+   * @param canvasOrId - the canvas element or its DOM `id`.
+   * @returns the native event-target string (see
+   *          {@link RemoteSession.getCanvasTarget}).
+   */
   bindCanvas(
     renderWindowId: number,
     canvasOrId: HTMLCanvasElement | string,
-  ): void;
+  ): string;
+
+  /**
+   * Return the native event-target string for the canvas registered to a
+   * render window. This is a `specialHTMLTargets` key when the build exposes
+   * that map, otherwise a CSS selector. Pass it to `native.bindRenderWindow`.
+   */
+  getCanvasTarget(renderWindowId: number): string;
+
+  /**
+   * Remove the interaction listeners installed by
+   * {@link RemoteSession.bindCanvas} and forget the render window -> canvas
+   * mapping. The canvas element itself is left untouched.
+   */
   unbindCanvas(renderWindowId: number): void;
+
+  /** Set the size of the given render window. */
   setSizeAsync(
     renderWindowId: number,
     width: number,
     height: number,
   ): Promise<void>;
+
+  /** Start the event loop on the given render window. */
   startEventLoop(renderWindowId: number): void;
+  /** Stop the event loop on the given render window. */
   stopEventLoop(renderWindowId: number): void;
+
+  /** Update an object and its dependencies to match the remote version. */
   updateAsync(vtkId: number): Promise<void>;
+
+  /**
+   * Fetch and decode a state; registering it still has to be done separately.
+   *
+   * @returns the state of the VTK object, or `null` if the server has none.
+   */
   fetchStateAsync(vtkId: number): Promise<unknown>;
+
+  /**
+   * Fetch a blob and register it inside the session.
+   *
+   * @returns the typed array matching the blob content.
+   */
   fetchHashAsync(hash: string): Promise<unknown>;
+
+  /**
+   * Combine {@link RemoteSession.fetchStateAsync} and
+   * {@link RemoteSession.fetchHashAsync} into a single network call.
+   *
+   * @returns the fetched states.
+   */
+  fetchBatchAsync(vtkIds: number[], hashes: string[]): Promise<unknown[]>;
+
+  /** Push a blob into the session's internal structures. */
+  pushHashAsync(
+    hash: string,
+    arrayOrBlob: Blob | MarshallableTypedArray,
+  ): Promise<void>;
+
+  /** Retrieve the local state of an object. */
   getState(vtkId: number, useCache?: boolean): unknown;
+  /** Query the local value of a single property. */
   getStateValue(valuePath: string, useCache?: boolean): unknown;
+  /** Clear the local state cache. */
   clearStateCache(): void;
-  addProgressCallback(callback: (...args: any[]) => void): void;
+
+  /**
+   * Get a helper proxy for controlling a vtkObject on the WASM side.
+   *
+   * The returned proxy exposes:
+   * - `id` — the WASM id, and `obj` — the id wrapped as `{ Id: wasmId }`.
+   * - `state` — the full object state.
+   * - `delete()` — remove the object from the WASM stack.
+   * - `set(kwargs)` — update a batch of properties at once.
+   * - `observe(eventName, fn) -> tag` / `unObserve(tag)` / `unObserveAll()` —
+   *   manage listeners.
+   * - each VTK property as a getter/setter, and each VTK method as an async call.
+   */
+  getVtkObject(vtkId: number): vtkObject;
+
+  /**
+   * Register a callback to monitor download progress.
+   *
+   * @returns a cleanup function that unregisters the callback.
+   */
+  addProgressCallback(callback: (...args: any[]) => void): () => void;
+
+  /**
+   * Free old blobs once they exceed the allowed cache size in bytes, starting
+   * with the oldest.
+   */
   freeMemory(cacheSize?: number): void;
+
+  /**
+   * Free the C++ session and detach the interaction listeners installed on the
+   * user-provided canvases. The canvas elements themselves are left untouched.
+   * The session is unusable afterwards.
+   */
+  dispose(): void;
+  [Symbol.dispose](): void;
 }
 
 /** Options accepted by {@link loadAsync}. */
 export interface LoadOptions {
-  /** Directory URL or `.tar.gz` bundle URL hosting the VTK.wasm files. */
+  /**
+   * Directory or `.tar.gz` bundle to load VTK.wasm from. Ignored when the glue
+   * script is already present on the page.
+   */
   url?: string;
-  /** Base name of the `.mjs`/`.wasm` files (without extension). */
+  /** Whether the resource at {@link LoadOptions.url} is a gzip archive. Defaults to `true`. */
+  urlIsGzip?: boolean;
+  /** Base name of the wasm bundle. Defaults to `"vtk"`. */
   wasmBaseName?: string;
-  /** Rendering backend. */
+  /** Rendering backend. Defaults to `"webgl"`. */
   rendering?: "webgl" | "webgpu";
-  /** Execution model. */
+  /**
+   * Method execution mode. Defaults to `"sync"`. With the single-binary
+   * bundles this only affects which legacy file is preferred when present; the
+   * proxy feature-detects `invokeAsync` at runtime. With old split bundles,
+   * `"async"` loads the `...Async` binary.
+   */
   exec?: "sync" | "async";
+  /** `std::cout` sink. */
+  print?: (text: string) => void;
+  /** `std::cerr` sink. */
+  printErr?: (text: string) => void;
   [key: string]: unknown;
 }
 
-/** A loaded VTK.wasm runtime. Create sessions from it. */
+/**
+ * A loaded VTK.wasm WebAssembly module. Acts as the single factory for sessions.
+ */
 export class VtkWasmRuntime {
+  /** Whether {@link VtkWasmRuntime.dispose} has already run. */
   readonly disposed: boolean;
+  /**
+   * The unique identifier for the wasm module this runtime was created from.
+   * Looks like `url::wasmBaseName::config.rendering::config.exec`.
+   */
   readonly id: string;
+  /** The underlying Emscripten module. Escape hatch; prefer the session API. */
   readonly module: object;
   /**
-   * Pointer-level heap marshalling. Creating VTK arrays needs a session, so
-   * `toVTKAoSArray` lives on {@link StandaloneSession.typedArrayInterface}.
+   * Pointer-level marshalling between JavaScript TypedArrays and the wasm heap:
+   * `alloc`, `free`, `copyToHeap`, `copyFromHeap`, `viewAt`. Creating VTK data
+   * arrays needs a session, so `toVTKAoSArray` lives on
+   * {@link StandaloneSession.typedArrayInterface} instead.
    */
-  readonly typedArrayInterface: HeapInterface;
+  readonly heapInterface: HeapInterface;
+  /** Whether this runtime executes methods asynchronously (JSPI). */
   isAsync(): boolean;
+  /** Create an in-browser standalone session. */
   createStandaloneSession(): StandaloneSession;
+  /** Create a server-driven remote session. */
   createRemoteSession(): RemoteSession;
+  /**
+   * Drop this runtime from the shared cache and release the module reference.
+   * Note: Emscripten cannot reclaim a runtime's heap before page reload;
+   * disposing individual sessions is what actually frees C++ memory.
+   */
   dispose(): void;
+  [Symbol.dispose](): void;
 }
 
 /**
- * Load (and cache) a VTK.wasm runtime.
+ * Load the VTK.wasm runtime and return a {@link VtkWasmRuntime} ready to create
+ * sessions. Runtimes are cached per (url, wasmBaseName, rendering, exec), so
+ * repeated calls with the same options share a single WebAssembly module.
+ *
+ * To pipe `std::cout`/`std::cerr` to the console, pass
+ * {@link LoadOptions.print} / {@link LoadOptions.printErr}.
  */
 export function loadAsync(options?: LoadOptions): Promise<VtkWasmRuntime>;
 
 /**
- * When the script tag has `id="vtk-wasm"`, resolves to the `vtk` namespace of
- * the auto-created standalone session; otherwise `undefined`.
+ * When the script tag has `id="vtk-wasm"`, the runtime is loaded automatically
+ * and this resolves to the `vtk` namespace of the auto-created standalone
+ * session; otherwise `undefined`. Reach it via the UMD global
+ * (`vtkwasm.ready`) or an ESM import
+ * (`import { ready } from "@kitware/vtk-wasm"`).
+ *
+ * Data attributes recognized on the script tag:
+ *  - `data-url="url to load VTK.wasm from"` — only needed when VTK.wasm is not
+ *    already loaded.
+ *  - `data-config="{ rendering: 'webgl|webgpu', exec: 'sync|async' }"` — JSON
+ *    configuration for the WASM module.
  */
 export const ready: Promise<VtkNamespace> | undefined;
 
-/** The auto-load standalone session, set after {@link ready} resolves. */
+/**
+ * The {@link StandaloneSession} created by the annotation auto-load. Set after
+ * {@link ready} resolves; `undefined` before then and when auto-load is not
+ * active. Use it to call `session.registerCanvas()` and similar helpers.
+ */
 export const session: StandaloneSession | undefined;

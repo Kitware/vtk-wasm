@@ -1,9 +1,5 @@
-/**
- * `@kitware/vtk-wasm/viewer`: load a serialized VTK scene (`.vtk-wasm` export)
- * into a remote session and display it.
- *
- * @module @kitware/vtk-wasm/viewer
- */
+// Entry point of `@kitware/vtk-wasm/viewer`. The public API is documented on
+// the declarations in types/viewer.d.ts, which is what TypeDoc renders.
 import JSZip from "jszip";
 import { loadAsync } from "./runtime";
 import { createFuture } from "./core/future";

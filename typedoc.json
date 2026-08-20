@@ -1,7 +1,7 @@
 {
   "$schema": "https://typedoc.org/schema.json",
   "plugin": ["typedoc-plugin-markdown", "typedoc-vitepress-theme"],
-  "entryPoints": ["src/index.js", "src/viewer.js"],
+  "entryPoints": ["types/index.d.ts", "types/viewer.d.ts"],
   "tsconfig": "tsconfig.json",
   "out": "docs/api",
   "readme": "none",
