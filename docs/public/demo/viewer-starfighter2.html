@@ -22,7 +22,7 @@
           const widget = viewer.remoting.getVtkObject(58);
           const plane = viewer.remoting.getVtkObject(25);
 
-          widget.observe("InteractionEvent", () => {
+          widget.$observe("InteractionEvent", () => {
             plane.origin = widget.widgetRepresentation.origin;
             plane.normal = widget.widgetRepresentation.normal;
           });
