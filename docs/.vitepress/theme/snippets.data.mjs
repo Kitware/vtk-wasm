@@ -18,17 +18,29 @@ const LANGS = ["html", "javascript", "typescript", "cpp", "python"];
 // The hero snippet is the annotation form from
 // public/demo/plain-javascript-annotation-wasm-registry.html — the shortest path
 // from an empty page to a rendered scene.
-const hero = `<script
-  src="https://unpkg.com/@kitware/vtk-wasm/vtk-umd.js"
-  id="vtk-wasm"
-  data-url="${BUNDLE_URL}"
-></script>
-
-<canvas id="vtk-wasm-window" tabindex="-1"></canvas>
-
-<script>
-  vtkwasm.ready.then((vtk) => buildScene(vtk, "#vtk-wasm-window"));
-</script>`;
+const hero = `import { loadAsync } from "@kitware/vtk-wasm";
+const BUNDLE_URL = "${BUNDLE_URL}";
+const runtime = await loadAsync({ url: BUNDLE_URL });
+const session = runtime.createStandaloneSession();
+const vtk = session.vtk;
+// Generate a mesh
+const shapes = vtk.vtkPartitionedDataSetCollectionSource({ numberOfShapes: 2 });
+const mapper = vtk.vtkCompositePolyDataMapper();
+const actor = vtk.vtkActor({ mapper});
+actor.property.edgeVisibility = true;
+actor.property.edgeColor = [0.2, 0.2, 0.2];
+// Add actor a vtkRenderer
+const renderer = vtk.vtkRenderer({ background: [0.384314, 0.364706, 0.352941] });
+renderer.addActor(actor);
+renderer.resetCamera();
+// Create a vtkRenderWindow and bind it to a canvas in the DOM
+const renderWindow = vtk.vtkWebAssemblyOpenGLRenderWindow({ canvasSelector });
+renderWindow.addRenderer(renderer);
+const interactor = vtk.vtkWebAssemblyRenderWindowInteractor({ canvasSelector, renderWindow });
+interactor.interactorStyle.setCurrentStyleToTrackballCamera();
+// Start event loop
+interactor.start();
+`;
 
 const js = `import { loadAsync } from "@kitware/vtk-wasm";
 
@@ -135,7 +147,7 @@ with SinglePageLayout(server) as layout:
 server.start()`;
 
 const SNIPPETS = [
-  { key: "hero", lang: "html", code: hero },
+  { key: "hero", lang: "typescript", code: hero },
   { key: "js", lang: "javascript", code: js },
   { key: "ts", lang: "typescript", code: ts },
   { key: "cpp", lang: "cpp", code: cpp },

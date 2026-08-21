@@ -270,10 +270,6 @@ const latestRelease = computed(
 							<div class="ld-stat-label">GPU servers required</div>
 						</div>
 						<div class="ld-stat">
-							<div class="ld-stat-value">1</div>
-							<div class="ld-stat-label">script tag to first render</div>
-						</div>
-						<div class="ld-stat">
 							<div class="ld-stat-value">4</div>
 							<div class="ld-stat-label">languages, one runtime</div>
 						</div>
@@ -285,7 +281,7 @@ const latestRelease = computed(
 						<span class="ld-dot" />
 						<span class="ld-dot" />
 						<span class="ld-dot" />
-						<span class="ld-panel-name">index.html</span>
+						<span class="ld-panel-name">main.ts</span>
 					</div>
 					<!-- eslint-disable-next-line vue/no-v-html -- build-time Shiki output, see snippets.data.js -->
 					<div class="ld-code vp-code" v-html="snippets.hero" />
