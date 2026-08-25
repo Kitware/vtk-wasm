@@ -225,7 +225,7 @@ export class RemoteSession {
   }
   async fetchBatchAsync(stateIds, hashKeys) {
     const results = [];
-    const { states, hashes } = await this.networkFetchBatch(stateIds, hashKeys);
+    const { states, hashes, next } = await this.networkFetchBatch(stateIds, hashKeys);
 
     // handle states
     for (let i = 0; i < states.length; i++) {
@@ -246,6 +246,11 @@ export class RemoteSession {
       this.#native.registerBlob(hash, array);
       this.hashesMTime[hash] = this.currentMTime;
       this.incrementProgress("hash");
+    }
+
+    // request next batch if any
+    if (next) {
+      await this.fetchBatchAsync(next.states, next.hashes);
     }
 
     return results;
