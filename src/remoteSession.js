@@ -234,7 +234,7 @@ export class RemoteSession {
         this.stateMTimes[state.Id] = state.MTime;
         results.push(state);
       } else {
-        delete this.stateMTimes[vtkId];
+        delete this.stateMTimes[stateIds[i]];
       }
       this.incrementProgress("state");
     }
@@ -321,7 +321,6 @@ export class RemoteSession {
         if (!this.hashesMTime[hash]) {
           hashesToFetch.push(hash);
         }
-        this.hashesMTime[hash] = this.currentMTime;
       });
 
       this.progressState = {
@@ -356,6 +355,7 @@ export class RemoteSession {
       this.currentMTime++;
 
       // Register states in a synchronous manner to prevent intermixed render from interactor
+      const needUpdate = statesToRegister.length;
       while (statesToRegister.length) {
         const state = statesToRegister.pop();
         if (state) {
@@ -364,41 +364,43 @@ export class RemoteSession {
       }
 
       // Bump local mtime and process states to reflect server state
-      try {
-        this.#native.updateObjectsFromStates();
-        // Upstream's vtkObjectManager::UpdateObjectFromState
-        // discards ownership metadata such as the "vtk-object-manager-kept-alive"
-        // key. Until then, this code should not run. Instead, it relies
-        // upon consumers having called the bindCanvas(renderWindowId, canvasOrId) method.
-        // This issue is tracked in https://gitlab.kitware.com/vtk/vtk/-/work_items/20099
-        // const state = this.getVtkObject(vtkId).$state;
-        // const isRenderWindow =
-        //   state?.className === "vtkRenderWindow" ||
-        //   state?.superClassNames?.includes("vtkRenderWindow");
-        const rwId = Number(vtkId);
-        const isRenderWindow = this.canvasTargets.has(rwId);
-        if (isRenderWindow) {
-          if (!this.boundRenderWindows.has(rwId)) {
-            // Only mark the window bound when the native bind SUCCEEDED. The
-            // bind fails when the render window object has not yet been
-            // deserialized in this update; marking it bound anyway meant the
-            // canvas selector was never assigned, and the interactor's event
-            // callback registration later threw on the empty selector inside
-            // the event loop's first tick — killing the tick chain and leaving
-            // a page that renders but ignores all input.
-            if (this.#native.bindRenderWindow(rwId, this.getCanvasTarget(rwId))) {
-              this.boundRenderWindows.add(rwId);
+      if (needUpdate) {
+        try {
+          this.#native.updateObjectsFromStates();
+          // Upstream's vtkObjectManager::UpdateObjectFromState
+          // discards ownership metadata such as the "vtk-object-manager-kept-alive"
+          // key. Until then, this code should not run. Instead, it relies
+          // upon consumers having called the bindCanvas(renderWindowId, canvasOrId) method.
+          // This issue is tracked in https://gitlab.kitware.com/vtk/vtk/-/work_items/20099
+          // const state = this.getVtkObject(vtkId).$state;
+          // const isRenderWindow =
+          //   state?.className === "vtkRenderWindow" ||
+          //   state?.superClassNames?.includes("vtkRenderWindow");
+          const rwId = Number(vtkId);
+          const isRenderWindow = this.canvasTargets.has(rwId);
+          if (isRenderWindow) {
+            if (!this.boundRenderWindows.has(rwId)) {
+              // Only mark the window bound when the native bind SUCCEEDED. The
+              // bind fails when the render window object has not yet been
+              // deserialized in this update; marking it bound anyway meant the
+              // canvas selector was never assigned, and the interactor's event
+              // callback registration later threw on the empty selector inside
+              // the event loop's first tick — killing the tick chain and leaving
+              // a page that renders but ignores all input.
+              if (this.#native.bindRenderWindow(rwId, this.getCanvasTarget(rwId))) {
+                this.boundRenderWindows.add(rwId);
+              }
             }
+            if (rwId in this.renderWindowSizes) {
+              const [w, h] = this.renderWindowSizes[rwId];
+              this.#native.setSize(rwId, w, h);
+            }
+            await this.#native.render(rwId);
           }
-          if (rwId in this.renderWindowSizes) {
-            const [w, h] = this.renderWindowSizes[rwId];
-            this.#native.setSize(rwId, w, h);
-          }
-          await this.#native.render(rwId);
+        } catch (e) {
+          console.error("WASM update failed");
+          console.log(e);
         }
-      } catch (e) {
-        console.error("WASM update failed");
-        console.log(e);
       }
     } catch (e) {
       console.error("Error in update", e);
