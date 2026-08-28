@@ -320,6 +320,10 @@ export class RemoteSession {
       serverStatus.hashes.forEach((hash) => {
         if (!this.hashesMTime[hash]) {
           hashesToFetch.push(hash);
+        } else {
+          // tag existing blob with current mtime so they don't
+          // get removed at gc for being used from the cache.
+          this.hashesMTime[hash] = this.currentMTime;
         }
       });
 
