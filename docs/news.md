@@ -1,3 +1,17 @@
+## 9.7.20260830 is now available!
+
+__August 30, 2026__
+
+You can install the equivalent python wheel with the command
+
+```sh
+pip install "vtk==9.7.20260830.dev0" --extra-index-url https://wheels.vtk.org
+```
+
+The WASM bundle is available here:
+1. [vtk-9.7.20260830-wasm32-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/7709/download)
+2. [vtk-9.7.20260830-wasm64-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/7708/download)
+
 ## 9.7.20260823 is now available!
 
 __August 23, 2026__
