@@ -1,0 +1,167 @@
+{
+  "generated": "2026-08-31T15:40:39Z",
+  "source": "https://gitlab.kitware.com/api/v4/projects/13/packages",
+  "architectures": [
+    "wasm32",
+    "wasm64"
+  ],
+  "latest": {
+    "wasm32": {
+      "version": "9.7.20260830",
+      "path": "latest/vtk-wasm32-emscripten.tar.gz",
+      "urls": {
+        "githack": "https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz",
+        "raw": "https://raw.githubusercontent.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz"
+      }
+    },
+    "wasm64": {
+      "version": "9.7.20260830",
+      "path": "latest/vtk-wasm64-emscripten.tar.gz",
+      "urls": {
+        "githack": "https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm64-emscripten.tar.gz",
+        "raw": "https://raw.githubusercontent.com/Kitware/vtk-wasm/dist/latest/vtk-wasm64-emscripten.tar.gz"
+      }
+    }
+  },
+  "releases": {
+    "9.4.0": {
+      "wasm32": {
+        "path": "releases/9.4.0/vtk-9.4.0-wasm32-emscripten.tar.gz",
+        "urls": {
+          "githack": "https://raw.githack.com/Kitware/vtk-wasm/dist/releases/9.4.0/vtk-9.4.0-wasm32-emscripten.tar.gz",
+          "raw": "https://raw.githubusercontent.com/Kitware/vtk-wasm/dist/releases/9.4.0/vtk-9.4.0-wasm32-emscripten.tar.gz"
+        }
+      },
+      "wasm64": {
+        "path": "releases/9.4.0/vtk-9.4.0-wasm64-emscripten.tar.gz",
+        "urls": {
+          "githack": "https://raw.githack.com/Kitware/vtk-wasm/dist/releases/9.4.0/vtk-9.4.0-wasm64-emscripten.tar.gz",
+          "raw": "https://raw.githubusercontent.com/Kitware/vtk-wasm/dist/releases/9.4.0/vtk-9.4.0-wasm64-emscripten.tar.gz"
+        }
+      }
+    },
+    "9.4.1": {
+      "wasm32": {
+        "path": "releases/9.4.1/vtk-9.4.1-wasm32-emscripten.tar.gz",
+        "urls": {
+          "githack": "https://raw.githack.com/Kitware/vtk-wasm/dist/releases/9.4.1/vtk-9.4.1-wasm32-emscripten.tar.gz",
+          "raw": "https://raw.githubusercontent.com/Kitware/vtk-wasm/dist/releases/9.4.1/vtk-9.4.1-wasm32-emscripten.tar.gz"
+        }
+      },
+      "wasm64": {
+        "path": "releases/9.4.1/vtk-9.4.1-wasm64-emscripten.tar.gz",
+        "urls": {
+          "githack": "https://raw.githack.com/Kitware/vtk-wasm/dist/releases/9.4.1/vtk-9.4.1-wasm64-emscripten.tar.gz",
+          "raw": "https://raw.githubusercontent.com/Kitware/vtk-wasm/dist/releases/9.4.1/vtk-9.4.1-wasm64-emscripten.tar.gz"
+        }
+      }
+    },
+    "9.4.2": {
+      "wasm32": {
+        "path": "releases/9.4.2/vtk-9.4.2-wasm32-emscripten.tar.gz",
+        "urls": {
+          "githack": "https://raw.githack.com/Kitware/vtk-wasm/dist/releases/9.4.2/vtk-9.4.2-wasm32-emscripten.tar.gz",
+          "raw": "https://raw.githubusercontent.com/Kitware/vtk-wasm/dist/releases/9.4.2/vtk-9.4.2-wasm32-emscripten.tar.gz"
+        }
+      },
+      "wasm64": {
+        "path": "releases/9.4.2/vtk-9.4.2-wasm64-emscripten.tar.gz",
+        "urls": {
+          "githack": "https://raw.githack.com/Kitware/vtk-wasm/dist/releases/9.4.2/vtk-9.4.2-wasm64-emscripten.tar.gz",
+          "raw": "https://raw.githubusercontent.com/Kitware/vtk-wasm/dist/releases/9.4.2/vtk-9.4.2-wasm64-emscripten.tar.gz"
+        }
+      }
+    },
+    "9.5.0": {
+      "wasm32": {
+        "path": "releases/9.5.0/vtk-9.5.0-wasm32-emscripten.tar.gz",
+        "urls": {
+          "githack": "https://raw.githack.com/Kitware/vtk-wasm/dist/releases/9.5.0/vtk-9.5.0-wasm32-emscripten.tar.gz",
+          "raw": "https://raw.githubusercontent.com/Kitware/vtk-wasm/dist/releases/9.5.0/vtk-9.5.0-wasm32-emscripten.tar.gz"
+        }
+      }
+    },
+    "9.5.1": {
+      "wasm32": {
+        "path": "releases/9.5.1/vtk-9.5.1-wasm32-emscripten.tar.gz",
+        "urls": {
+          "githack": "https://raw.githack.com/Kitware/vtk-wasm/dist/releases/9.5.1/vtk-9.5.1-wasm32-emscripten.tar.gz",
+          "raw": "https://raw.githubusercontent.com/Kitware/vtk-wasm/dist/releases/9.5.1/vtk-9.5.1-wasm32-emscripten.tar.gz"
+        }
+      }
+    },
+    "9.5.2": {
+      "wasm32": {
+        "path": "releases/9.5.2/vtk-9.5.2-wasm32-emscripten.tar.gz",
+        "urls": {
+          "githack": "https://raw.githack.com/Kitware/vtk-wasm/dist/releases/9.5.2/vtk-9.5.2-wasm32-emscripten.tar.gz",
+          "raw": "https://raw.githubusercontent.com/Kitware/vtk-wasm/dist/releases/9.5.2/vtk-9.5.2-wasm32-emscripten.tar.gz"
+        }
+      }
+    },
+    "9.6.0": {
+      "wasm32": {
+        "path": "releases/9.6.0/vtk-9.6.0-wasm32-emscripten.tar.gz",
+        "urls": {
+          "githack": "https://raw.githack.com/Kitware/vtk-wasm/dist/releases/9.6.0/vtk-9.6.0-wasm32-emscripten.tar.gz",
+          "raw": "https://raw.githubusercontent.com/Kitware/vtk-wasm/dist/releases/9.6.0/vtk-9.6.0-wasm32-emscripten.tar.gz"
+        }
+      },
+      "wasm64": {
+        "path": "releases/9.6.0/vtk-9.6.0-wasm64-emscripten.tar.gz",
+        "urls": {
+          "githack": "https://raw.githack.com/Kitware/vtk-wasm/dist/releases/9.6.0/vtk-9.6.0-wasm64-emscripten.tar.gz",
+          "raw": "https://raw.githubusercontent.com/Kitware/vtk-wasm/dist/releases/9.6.0/vtk-9.6.0-wasm64-emscripten.tar.gz"
+        }
+      }
+    },
+    "9.6.1": {
+      "wasm32": {
+        "path": "releases/9.6.1/vtk-9.6.1-wasm32-emscripten.tar.gz",
+        "urls": {
+          "githack": "https://raw.githack.com/Kitware/vtk-wasm/dist/releases/9.6.1/vtk-9.6.1-wasm32-emscripten.tar.gz",
+          "raw": "https://raw.githubusercontent.com/Kitware/vtk-wasm/dist/releases/9.6.1/vtk-9.6.1-wasm32-emscripten.tar.gz"
+        }
+      },
+      "wasm64": {
+        "path": "releases/9.6.1/vtk-9.6.1-wasm64-emscripten.tar.gz",
+        "urls": {
+          "githack": "https://raw.githack.com/Kitware/vtk-wasm/dist/releases/9.6.1/vtk-9.6.1-wasm64-emscripten.tar.gz",
+          "raw": "https://raw.githubusercontent.com/Kitware/vtk-wasm/dist/releases/9.6.1/vtk-9.6.1-wasm64-emscripten.tar.gz"
+        }
+      }
+    },
+    "9.6.2": {
+      "wasm32": {
+        "path": "releases/9.6.2/vtk-9.6.2-wasm32-emscripten.tar.gz",
+        "urls": {
+          "githack": "https://raw.githack.com/Kitware/vtk-wasm/dist/releases/9.6.2/vtk-9.6.2-wasm32-emscripten.tar.gz",
+          "raw": "https://raw.githubusercontent.com/Kitware/vtk-wasm/dist/releases/9.6.2/vtk-9.6.2-wasm32-emscripten.tar.gz"
+        }
+      },
+      "wasm64": {
+        "path": "releases/9.6.2/vtk-9.6.2-wasm64-emscripten.tar.gz",
+        "urls": {
+          "githack": "https://raw.githack.com/Kitware/vtk-wasm/dist/releases/9.6.2/vtk-9.6.2-wasm64-emscripten.tar.gz",
+          "raw": "https://raw.githubusercontent.com/Kitware/vtk-wasm/dist/releases/9.6.2/vtk-9.6.2-wasm64-emscripten.tar.gz"
+        }
+      }
+    },
+    "9.7.0": {
+      "wasm32": {
+        "path": "releases/9.7.0/vtk-9.7.0-wasm32-emscripten.tar.gz",
+        "urls": {
+          "githack": "https://raw.githack.com/Kitware/vtk-wasm/dist/releases/9.7.0/vtk-9.7.0-wasm32-emscripten.tar.gz",
+          "raw": "https://raw.githubusercontent.com/Kitware/vtk-wasm/dist/releases/9.7.0/vtk-9.7.0-wasm32-emscripten.tar.gz"
+        }
+      },
+      "wasm64": {
+        "path": "releases/9.7.0/vtk-9.7.0-wasm64-emscripten.tar.gz",
+        "urls": {
+          "githack": "https://raw.githack.com/Kitware/vtk-wasm/dist/releases/9.7.0/vtk-9.7.0-wasm64-emscripten.tar.gz",
+          "raw": "https://raw.githubusercontent.com/Kitware/vtk-wasm/dist/releases/9.7.0/vtk-9.7.0-wasm64-emscripten.tar.gz"
+        }
+      }
+    }
+  }
+}
