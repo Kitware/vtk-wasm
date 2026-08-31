@@ -40,6 +40,7 @@ export class RemoteSession {
     this.renderWindowSizes = {};
     this.boundRenderWindows = new Set();
     this.renderWindowIdsWithRunningEventLoops = new Set();
+    this.currentBlobs = {}
 
     // renderWindowId -> { canvas, target } where `canvas` is the user-provided
     // element and `target` is the string handed to native.bindRenderWindow
@@ -164,6 +165,12 @@ export class RemoteSession {
   freeMemory(cacheSize = 0) {
     const memArrays = this.#native.getTotalBlobMemoryUsage();
     const threshold = Number(cacheSize);
+    const usedBlobs = new Set();
+    Object.values(this.currentBlobs).forEach((hashes) => {
+      for (let i = 0; i < hashes.length; i++) {
+        usedBlobs.add(hashes[i]);
+      }
+    });
 
     if (memArrays > threshold) {
       // Need to remove old blobs
@@ -182,10 +189,14 @@ export class RemoteSession {
       });
 
       // Remove blobs starting by the old ones
-      while (this.#native.getTotalBlobMemoryUsage() > threshold) {
+      while (this.#native.getTotalBlobMemoryUsage() > threshold && mtimeToFree < this.currentMTime) {
         const hashesToDelete = tsMap[mtimeToFree];
         if (hashesToDelete) {
           for (let i = 0; i < hashesToDelete.length; i++) {
+            if (usedBlobs.has(hashesToDelete[i])) {
+              // do not remove any blob that is currently used
+              continue;
+            }
             this.#native.unRegisterBlob(hashesToDelete[i]);
             delete this.hashesMTime[hashesToDelete[i]];
           }
@@ -326,6 +337,10 @@ export class RemoteSession {
           this.hashesMTime[hash] = this.currentMTime;
         }
       });
+
+      // track hashes needed in current rendering to prevent
+      // blob eviction
+      this.currentBlobs[vtkId] = serverStatus.hashes;
 
       this.progressState = {
         active: !!(statesToFetch.length + hashesToFetch.length),
