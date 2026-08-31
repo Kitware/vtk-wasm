@@ -333,7 +333,8 @@ export class RemoteSession {
           hashesToFetch.push(hash);
         } else {
           // tag existing blob with current mtime so they don't
-          // get removed at gc for being used from the cache.
+          // get removed at gc for being used from the cache from
+          // a long time ago.
           this.hashesMTime[hash] = this.currentMTime;
         }
       });
