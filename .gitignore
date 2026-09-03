@@ -5,6 +5,7 @@ docs/api
 docs/public/demo/playground
 docs/public/demo/simple-app
 docs/public/demo/wave-app-ts
+docs/public/demo/text-ts
 docs/public/js/viewer.css
 docs/public/js/viewer.umd.js
 docs/public/js/vtk.umd.js

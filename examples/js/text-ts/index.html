@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VTK.wasm TypeScript vtkTextActor scale modes</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #05070f;
+        color: #e8eef8;
+        font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      #app {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+      }
+      #app > canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      #overlay {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        max-width: 26rem;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+        padding: 14px 18px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 10px;
+        background: rgba(6, 12, 26, 0.55);
+        backdrop-filter: blur(8px);
+      }
+      #overlay h1 {
+        margin: 0 0 6px;
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+      #overlay p {
+        margin: 0;
+        font-size: 12.5px;
+        color: rgba(232, 238, 248, 0.7);
+      }
+      #status {
+        margin-top: 10px;
+        font-variant-numeric: tabular-nums;
+        font-size: 12.5px;
+        color: #7fd8e8;
+      }
+      fieldset {
+        margin-top: 12px;
+        border: 1px solid rgba(127, 216, 232, 0.25);
+        border-radius: 8px;
+        padding: 8px 10px 10px;
+      }
+      legend {
+        padding: 0 6px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        color: #7fd8e8;
+      }
+      .controls {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        column-gap: 10px;
+        row-gap: 8px;
+        align-items: center;
+      }
+      .controls label {
+        font-size: 12.5px;
+        color: rgba(232, 238, 248, 0.7);
+      }
+      .controls select,
+      .controls input[type="text"],
+      .controls input[type="number"] {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 4px 6px;
+        border: 1px solid rgba(127, 216, 232, 0.4);
+        border-radius: 6px;
+        background: rgba(5, 7, 15, 0.6);
+        color: #e8eef8;
+        font: inherit;
+        font-size: 12.5px;
+      }
+      .controls input[type="color"] {
+        width: 100%;
+        height: 24px;
+        box-sizing: border-box;
+        padding: 0;
+        border: 1px solid rgba(127, 216, 232, 0.4);
+        border-radius: 6px;
+        background: transparent;
+      }
+      .controls input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        margin: 0;
+      }
+      .controls .pair {
+        display: flex;
+        gap: 6px;
+      }
+      .controls .pair input {
+        width: 0; /* let flexbox size the two inputs evenly */
+        flex: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <canvas tabindex="-1" onclick="focus()"></canvas>
+      <div id="overlay">
+        <h1>vtkTextActor</h1>
+        <p>
+          One <code>vtkTextActor</code>, every setting on it and its
+          <code>vtkTextProperty</code> editable below. Resize the window to
+          see how each scale mode reacts to the viewport size.
+        </p>
+        <div id="status">loading…</div>
+
+        <fieldset>
+          <legend>App</legend>
+          <div class="controls">
+            <label for="showOutlineInput">Show outline</label>
+            <input id="showOutlineInput" type="checkbox" checked />
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>vtkTextActor</legend>
+          <div class="controls">
+            <label for="textInput">Text</label>
+            <input id="textInput" type="text" value="This scene shows a blue sphere" />
+
+            <label for="modeSelect">Scale mode</label>
+            <select id="modeSelect">
+              <option value="None">None</option>
+              <option value="Prop">Prop</option>
+              <option value="Viewport" selected>Viewport</option>
+            </select>
+
+            <label for="exponentInput">Font scale exponent</label>
+            <input
+              id="exponentInput"
+              type="number"
+              min="0"
+              max="1"
+              step="0.1"
+              value="1.0"
+            />
+
+            <label for="pos1XInput">Position (x, y)</label>
+            <div class="pair">
+              <input id="pos1XInput" type="number" min="0" max="1" step="0.01" value="0.08" />
+              <input id="pos1YInput" type="number" min="0" max="1" step="0.01" value="0.08" />
+            </div>
+
+            <label for="pos2WInput">Position2 (w, h)</label>
+            <div class="pair">
+              <input id="pos2WInput" type="number" min="0" max="1" step="0.01" value="0.36" />
+              <input id="pos2HInput" type="number" min="0" max="1" step="0.01" value="0.12" />
+            </div>
+
+            <label for="minSizeWInput">Minimum size (w, h)</label>
+            <div class="pair">
+              <input id="minSizeWInput" type="number" min="0" step="1" value="10" />
+              <input id="minSizeHInput" type="number" min="0" step="1" value="10" />
+            </div>
+
+            <label for="maxLineHeightInput">Max line height (0–1)</label>
+            <input
+              id="maxLineHeightInput"
+              type="number"
+              min="0"
+              max="1"
+              step="0.05"
+              value="1.0"
+            />
+
+            <label for="useBorderAlignInput">Use border align</label>
+            <input id="useBorderAlignInput" type="checkbox" />
+
+            <label for="actorOrientationInput">Orientation (deg)</label>
+            <input
+              id="actorOrientationInput"
+              type="number"
+              step="1"
+              value="0"
+            />
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>vtkTextProperty</legend>
+          <div class="controls">
+            <label for="fontSizeInput">Font size (pt)</label>
+            <input id="fontSizeInput" type="number" min="1" max="200" value="14" />
+
+            <label for="fontFamilySelect">Font family</label>
+            <select id="fontFamilySelect">
+              <option value="Arial" selected>Arial</option>
+              <option value="Courier">Courier</option>
+              <option value="Times">Times</option>
+            </select>
+
+            <label for="fontFileInput">Font file (path/URL)</label>
+            <input id="fontFileInput" type="text" placeholder="" />
+
+            <label for="boldInput">Bold</label>
+            <input id="boldInput" type="checkbox" checked />
+
+            <label for="italicInput">Italic</label>
+            <input id="italicInput" type="checkbox" />
+
+            <label for="colorInput">Color</label>
+            <input id="colorInput" type="color" value="#ffdb66" />
+
+            <label for="opacityInput">Opacity (0–1)</label>
+            <input id="opacityInput" type="number" min="0" max="1" step="0.05" value="1.0" />
+
+            <label for="justificationSelect">Justification</label>
+            <select id="justificationSelect">
+              <option value="Left" selected>Left</option>
+              <option value="Centered">Centered</option>
+              <option value="Right">Right</option>
+            </select>
+
+            <label for="vJustificationSelect">Vertical justification</label>
+            <select id="vJustificationSelect">
+              <option value="Bottom" selected>Bottom</option>
+              <option value="Centered">Centered</option>
+              <option value="Top">Top</option>
+            </select>
+
+            <label for="tpOrientationInput">Orientation (deg)</label>
+            <input id="tpOrientationInput" type="number" step="1" value="0" />
+
+            <label for="lineSpacingInput">Line spacing</label>
+            <input id="lineSpacingInput" type="number" min="0" step="0.1" value="1.1" />
+
+            <label for="lineOffsetInput">Line offset</label>
+            <input id="lineOffsetInput" type="number" step="1" value="0" />
+
+            <label for="cellOffsetInput">Cell offset</label>
+            <input id="cellOffsetInput" type="number" step="1" value="0" />
+
+            <label for="tightBBoxInput">Use tight bounding box</label>
+            <input id="tightBBoxInput" type="checkbox" />
+
+            <label for="shadowInput">Shadow</label>
+            <input id="shadowInput" type="checkbox" checked />
+
+            <label for="shadowOffsetXInput">Shadow offset (x, y)</label>
+            <div class="pair">
+              <input id="shadowOffsetXInput" type="number" step="1" value="1" />
+              <input id="shadowOffsetYInput" type="number" step="1" value="-1" />
+            </div>
+
+            <label for="frameInput">Frame</label>
+            <input id="frameInput" type="checkbox" />
+
+            <label for="frameColorInput">Frame color</label>
+            <input id="frameColorInput" type="color" value="#59738f" />
+
+            <label for="frameWidthInput">Frame width</label>
+            <input id="frameWidthInput" type="number" min="0" step="1" value="1" />
+
+            <label for="bgColorInput">Background color</label>
+            <input id="bgColorInput" type="color" value="#000000" />
+
+            <label for="bgOpacityInput">Background opacity (0–1)</label>
+            <input id="bgOpacityInput" type="number" min="0" max="1" step="0.05" value="0" />
+
+            <label for="interiorLinesVisInput">Interior lines</label>
+            <input id="interiorLinesVisInput" type="checkbox" />
+
+            <label for="interiorLinesWidthInput">Interior lines width</label>
+            <input id="interiorLinesWidthInput" type="number" min="0" step="1" value="1" />
+
+            <label for="interiorLinesColorInput">Interior lines color</label>
+            <input id="interiorLinesColorInput" type="color" value="#59738f" />
+          </div>
+        </fieldset>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

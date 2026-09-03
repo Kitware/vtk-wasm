@@ -1,0 +1,6 @@
+node_modules
+dist
+package-lock.json
+
+# Emitted by `npm run gen:types` against the bundle the app loads.
+src/vtk-wasm.gen.d.ts

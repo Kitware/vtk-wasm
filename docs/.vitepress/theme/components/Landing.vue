@@ -175,6 +175,11 @@ const demos = [
 		body: 'Render dynamic geometry',
 	},
 	{
+		href: withBase('/demo/text-ts/index.html'),
+		title: 'Text actor',
+		body: 'Draw text',
+	},
+	{
 		href: withBase('/demo/simple-app/index.html'),
 		title: 'Scalar bar widget',
 		body: 'Scalar bar widget',
