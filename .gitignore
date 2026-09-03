@@ -14,3 +14,4 @@ examples/cpp/*/build
 dist
 scripts/__pycache__
 types/generated.d.ts
+**/.DS_Store
