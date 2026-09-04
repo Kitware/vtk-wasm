@@ -158,17 +158,10 @@ const active = computed(
 	() => tabs.find((tab) => tab.id === activeTab.value) || tabs[0],
 )
 
-const demos = [
-	{
-		href: withBase('/demo/viewer-porsche.html'),
-		title: 'Porsche',
-		body: 'Multi-actor CAD assembly, picking',
-	},
-	{
-		href: withBase('/demo/terrain.html'),
-		title: 'Procedural terrain',
-		body: '351k triangles built in the browser, hit Generate',
-	},
+// Only these three run live, in an iframe: embedding every demo at once was
+// spiking page memory. The rest are still real demos, just linked out with a
+// screenshot instead of a second live WASM instance per card.
+const liveDemos = [
 	{
 		href: withBase('/demo/wave-app-ts/index.html'),
 		title: 'Dynamic mesh',
@@ -180,24 +173,42 @@ const demos = [
 		body: 'Draw text',
 	},
 	{
+		href: withBase('/demo/volume.html'),
+		title: 'Volume rendering',
+		body: '531k voxels ray cast on the GPU, change transfer function preset',
+	},
+]
+
+const linkedDemos = [
+	{
+		href: withBase('/demo/viewer-porsche.html'),
+		title: 'Porsche',
+		body: 'Multi-actor CAD assembly, picking',
+		image: withBase('/assets/images/demo-screenshots/viewer-porsche.png'),
+	},
+	{
+		href: withBase('/demo/terrain.html'),
+		title: 'Procedural terrain',
+		body: '351k triangles built in the browser, hit Generate',
+		image: withBase('/assets/images/demo-screenshots/terrain.png'),
+	},
+	{
 		href: withBase('/demo/simple-app/index.html'),
 		title: 'Scalar bar widget',
 		body: 'Scalar bar widget',
+		image: withBase('/assets/images/demo-screenshots/simple-app.png'),
 	},
 	{
 		href: withBase('/demo/viewer-starfighter2.html'),
 		title: 'Starfighter',
-		body: 'Glyphs, scalar bar, interactive widgets',
-	},
-	{
-		href: withBase('/demo/volume.html'),
-		title: 'Volume rendering',
-		body: '531k voxels ray cast on the GPU, change transfer function preset',
+		body: 'Interactive widgets',
+		image: withBase('/assets/images/demo-screenshots/viewer-starfighter2.png'),
 	},
 	{
 		href: withBase('/demo/actors.html'),
 		title: 'A thousand actors and more',
 		body: 'Every object its own vtkActor, add more to test performance',
+		image: withBase('/assets/images/demo-screenshots/actors.png'),
 	},
 ]
 
@@ -368,7 +379,11 @@ const latestRelease = computed(
 				</div>
 
 				<div class="ld-demos">
-					<div v-for="demo in demos" :key="demo.title" class="ld-card ld-demo">
+					<div
+						v-for="demo in liveDemos"
+						:key="demo.title"
+						class="ld-card ld-demo"
+					>
 						<div class="ld-demo-frame">
 							<iframe :src="demo.href" :title="demo.title" loading="lazy" />
 						</div>
@@ -382,6 +397,25 @@ const latestRelease = computed(
 							</a>
 						</div>
 					</div>
+
+					<a
+						v-for="demo in linkedDemos"
+						:key="demo.title"
+						class="ld-card ld-demo ld-demo-link"
+						:href="demo.href"
+						target="_blank"
+					>
+						<div class="ld-demo-frame">
+							<img :src="demo.image" :alt="demo.title" loading="lazy" />
+						</div>
+						<div class="ld-demo-meta">
+							<div class="ld-demo-text">
+								<div class="ld-demo-title">{{ demo.title }}</div>
+								<div class="ld-demo-body">{{ demo.body }}</div>
+							</div>
+							<span class="ld-badge ld-badge-accent">Open &rarr;</span>
+						</div>
+					</a>
 				</div>
 			</div>
 		</section>
@@ -915,6 +949,22 @@ const latestRelease = computed(
 	width: 100%;
 	height: 100%;
 	border: none;
+}
+
+.ld-demo-frame img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.ld-demo-link {
+	display: block;
+}
+
+.landing :deep(.ld-demo-link),
+.landing :deep(.ld-demo-link:hover) {
+	color: inherit;
 }
 
 .ld-demo-meta {
