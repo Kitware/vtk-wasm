@@ -1,0 +1,26 @@
+{
+  "name": "camera-guide-app-ts",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Interactive guide to vtkCamera built with VTK.wasm",
+  "type": "module",
+  "scripts": {
+    "gen:types": "vtk-wasm gen-types --url https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz --out src/vtk-wasm.gen.d.ts",
+    "predev": "npm run gen:types",
+    "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "prebuild": "npm run gen:types",
+    "build": "npm run typecheck && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@kitware/vtk-wasm": "file:../../.."
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "vite": "^6.3.5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

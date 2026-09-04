@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vtkCamera guide, powered by VTK.wasm</title>
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>vtkCamera guide</h1>
+      <p>
+        Interact in the <strong>camera view</strong>. The <strong>observer view</strong> draws that
+        camera's position, focal point, view-up, direction of projection and near/far clipping
+        planes; the panel lists every parameter, matrix and viewport value live.
+      </p>
+      <span id="status" class="status">Loading VTK.wasm…</span>
+    </header>
+    <main class="app-main">
+      <section class="view" id="observer-view">
+        <h2>1 · Observer view <small>camera drawn as geometry | drag left btn to orbit | drag middle btn to pan</small></h2>
+        <div class="canvas-host">
+          <canvas id="observer-canvas" tabindex="-1" onclick="focus()" oncontextmenu="event.preventDefault()"></canvas>
+        </div>
+      </section>
+      <section class="view" id="camera-view">
+        <h2>2 · Camera view <small><span id="camera-view-source">vtkPartitionedDataSetCollectionSource</span> | drag left btn to orbit | drag middle btn to pan</small></h2>
+        <div class="canvas-host">
+          <canvas id="camera-canvas" tabindex="-1" onclick="focus()" oncontextmenu="event.preventDefault()"></canvas>
+        </div>
+      </section>
+      <aside id="panel" class="panel"></aside>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

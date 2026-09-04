@@ -181,6 +181,12 @@ const liveDemos = [
 
 const linkedDemos = [
 	{
+		href: withBase('/demo/camera-guide-app-ts/index.html'),
+		title: 'Camera guide',
+		body: 'Camera',
+		image: withBase('/assets/images/demo-screenshots/camera-guide-app-ts.png'),
+	},
+	{
 		href: withBase('/demo/viewer-porsche.html'),
 		title: 'Porsche',
 		body: 'Multi-actor CAD assembly, picking',

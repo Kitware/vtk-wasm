@@ -1,0 +1,9 @@
+node_modules
+dist
+package-lock.json
+
+# Copied in by `npm run copy:bundle` (a local, absolute build artifact).
+public/*.tar.gz
+
+# Emitted by `npm run gen:types` against the bundle above.
+src/vtk-wasm.gen.d.ts
