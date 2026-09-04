@@ -211,6 +211,12 @@ const linkedDemos = [
 		body: 'Every object its own vtkActor, add more to test performance',
 		image: withBase('/demo-screenshots/actors.png'),
 	},
+	{
+		href: withBase('/demo/text-ts/index.html'),
+		title: 'Text actor',
+		body: 'Draw text',
+		image: withBase('/demo-screenshots/text-ts.png'),
+	},
 ]
 
 // docs/news.md is the single source of truth for releases; parse the two most
