@@ -158,7 +158,7 @@ const active = computed(
 	() => tabs.find((tab) => tab.id === activeTab.value) || tabs[0],
 )
 
-// Only these three run live, in an iframe: embedding every demo at once was
+// Only these two run live, in an iframe: embedding every demo at once was
 // spiking page memory. The rest are still real demos, just linked out with a
 // screenshot instead of a second live WASM instance per card.
 const liveDemos = [
@@ -166,11 +166,6 @@ const liveDemos = [
 		href: withBase('/demo/wave-app-ts/index.html'),
 		title: 'Dynamic mesh',
 		body: 'Render dynamic geometry',
-	},
-	{
-		href: withBase('/demo/text-ts/index.html'),
-		title: 'Text actor',
-		body: 'Draw text',
 	},
 	{
 		href: withBase('/demo/volume.html'),
@@ -184,37 +179,37 @@ const linkedDemos = [
 		href: withBase('/demo/camera-guide-app-ts/index.html'),
 		title: 'Camera guide',
 		body: 'Camera',
-		image: withBase('/assets/images/demo-screenshots/camera-guide-app-ts.png'),
+		image: withBase('/demo-screenshots/camera-guide-app-ts.png'),
 	},
 	{
 		href: withBase('/demo/viewer-porsche.html'),
 		title: 'Porsche',
 		body: 'Multi-actor CAD assembly, picking',
-		image: withBase('/assets/images/demo-screenshots/viewer-porsche.png'),
+		image: withBase('/demo-screenshots/viewer-porsche.png'),
 	},
 	{
 		href: withBase('/demo/terrain.html'),
 		title: 'Procedural terrain',
 		body: '351k triangles built in the browser, hit Generate',
-		image: withBase('/assets/images/demo-screenshots/terrain.png'),
+		image: withBase('/demo-screenshots/terrain.png'),
 	},
 	{
 		href: withBase('/demo/simple-app/index.html'),
 		title: 'Scalar bar widget',
 		body: 'Scalar bar widget',
-		image: withBase('/assets/images/demo-screenshots/simple-app.png'),
+		image: withBase('/demo-screenshots/simple-app.png'),
 	},
 	{
 		href: withBase('/demo/viewer-starfighter2.html'),
 		title: 'Starfighter',
 		body: 'Interactive widgets',
-		image: withBase('/assets/images/demo-screenshots/viewer-starfighter2.png'),
+		image: withBase('/demo-screenshots/viewer-starfighter2.png'),
 	},
 	{
 		href: withBase('/demo/actors.html'),
 		title: 'A thousand actors and more',
 		body: 'Every object its own vtkActor, add more to test performance',
-		image: withBase('/assets/images/demo-screenshots/actors.png'),
+		image: withBase('/demo-screenshots/actors.png'),
 	},
 ]
 
