@@ -38,13 +38,19 @@ export default withMermaid(defineConfig({
   // Dev-only unpkg -> local rewrite (see USE_LOCAL_WASM above). The Vite plugin
   // handles the static demo pages under public/; the markdown-it plugin handles
   // the <Playground> snippets in guide pages.
-  vite: USE_LOCAL_WASM
-    ? {
-        plugins: [
-          useLocalWasm({ publicDir: resolve(__dirname, "../public"), base: SITE_BASE }),
-        ],
-      }
-    : {},
+  vite: {
+    plugins: USE_LOCAL_WASM
+      ? [useLocalWasm({ publicDir: resolve(__dirname, "../public"), base: SITE_BASE })]
+      : [],
+    optimizeDeps: {
+      include: [
+        "fastdom",
+        "fastdom/extensions/fastdom-promised.js",
+        "cytoscape-fcose",
+        "dayjs/plugin/duration.js",
+      ],
+    },
+  },
   markdown: USE_LOCAL_WASM
     ? { config: (md) => localWasmMarkdown(SITE_BASE)(md) }
     : {},
