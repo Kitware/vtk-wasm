@@ -315,6 +315,59 @@ const latestRelease = computed(
 				</div>
 			</div>
 		</section>
+		
+		<!-- Demos -->
+		<section id="demos" class="ld-section">
+			<div class="ld-wrap">
+				<div class="ld-head-row">
+					<div>
+						<div class="ld-eyebrow">Live demos</div>
+						<h2 class="ld-h2 ld-h2-flush">Running in your browser, right now</h2>
+					</div>
+					<span class="ld-mono-note">open in full screen and inspect source in dev console</span>
+				</div>
+
+				<div class="ld-demos">
+					<div
+						v-for="demo in liveDemos"
+						:key="demo.title"
+						class="ld-card ld-demo"
+					>
+						<div class="ld-demo-frame">
+							<iframe :src="demo.href" :title="demo.title" loading="lazy" />
+						</div>
+						<div class="ld-demo-meta">
+							<div class="ld-demo-text">
+								<div class="ld-demo-title">{{ demo.title }}</div>
+								<div class="ld-demo-body">{{ demo.body }}</div>
+							</div>
+							<a class="ld-badge ld-badge-accent" :href="demo.href" target="_blank">
+								Full screen &rarr;
+							</a>
+						</div>
+					</div>
+
+					<a
+						v-for="demo in linkedDemos"
+						:key="demo.title"
+						class="ld-card ld-demo ld-demo-link"
+						:href="demo.href"
+						target="_blank"
+					>
+						<div class="ld-demo-frame">
+							<img :src="demo.image" :alt="demo.title" loading="lazy" />
+						</div>
+						<div class="ld-demo-meta">
+							<div class="ld-demo-text">
+								<div class="ld-demo-title">{{ demo.title }}</div>
+								<div class="ld-demo-body">{{ demo.body }}</div>
+							</div>
+							<span class="ld-badge ld-badge-accent">Open &rarr;</span>
+						</div>
+					</a>
+				</div>
+			</div>
+		</section>
 
 		<!-- Entry points -->
 		<section id="guides" class="ld-section ld-section-alt">
@@ -370,59 +423,6 @@ const latestRelease = computed(
 						<a :href="active.link">Read the {{ active.label }} guide &rarr;</a>
 						<span class="ld-muted">{{ active.note }}</span>
 					</div>
-				</div>
-			</div>
-		</section>
-
-		<!-- Demos -->
-		<section id="demos" class="ld-section">
-			<div class="ld-wrap">
-				<div class="ld-head-row">
-					<div>
-						<div class="ld-eyebrow">Live demos</div>
-						<h2 class="ld-h2 ld-h2-flush">Running in your browser, right now</h2>
-					</div>
-					<span class="ld-mono-note">open in full screen and inspect source in dev console</span>
-				</div>
-
-				<div class="ld-demos">
-					<div
-						v-for="demo in liveDemos"
-						:key="demo.title"
-						class="ld-card ld-demo"
-					>
-						<div class="ld-demo-frame">
-							<iframe :src="demo.href" :title="demo.title" loading="lazy" />
-						</div>
-						<div class="ld-demo-meta">
-							<div class="ld-demo-text">
-								<div class="ld-demo-title">{{ demo.title }}</div>
-								<div class="ld-demo-body">{{ demo.body }}</div>
-							</div>
-							<a class="ld-badge ld-badge-accent" :href="demo.href" target="_blank">
-								Full screen &rarr;
-							</a>
-						</div>
-					</div>
-
-					<a
-						v-for="demo in linkedDemos"
-						:key="demo.title"
-						class="ld-card ld-demo ld-demo-link"
-						:href="demo.href"
-						target="_blank"
-					>
-						<div class="ld-demo-frame">
-							<img :src="demo.image" :alt="demo.title" loading="lazy" />
-						</div>
-						<div class="ld-demo-meta">
-							<div class="ld-demo-text">
-								<div class="ld-demo-title">{{ demo.title }}</div>
-								<div class="ld-demo-body">{{ demo.body }}</div>
-							</div>
-							<span class="ld-badge ld-badge-accent">Open &rarr;</span>
-						</div>
-					</a>
 				</div>
 			</div>
 		</section>
