@@ -158,23 +158,21 @@ const active = computed(
 	() => tabs.find((tab) => tab.id === activeTab.value) || tabs[0],
 )
 
-// Only these two run live, in an iframe: embedding every demo at once was
-// spiking page memory. The rest are still real demos, just linked out with a
-// screenshot instead of a second live WASM instance per card.
-const liveDemos = [
+// Every card is a screenshot linking out to the real demo: embedding live WASM
+// instances in iframes was spiking page memory on first load.
+const demos = [
 	{
 		href: withBase('/demo/wave-app-ts/index.html'),
 		title: 'Dynamic mesh',
 		body: 'Render dynamic geometry',
+		image: withBase('/demo-screenshots/wave-app-ts.png'),
 	},
 	{
 		href: withBase('/demo/volume.html'),
 		title: 'Volume rendering',
 		body: '531k voxels ray cast on the GPU, change transfer function preset',
+		image: withBase('/demo-screenshots/volume.png'),
 	},
-]
-
-const linkedDemos = [
 	{
 		href: withBase('/demo/camera-guide-app-ts/index.html'),
 		title: 'Camera guide',
@@ -315,40 +313,21 @@ const latestRelease = computed(
 				</div>
 			</div>
 		</section>
-		
+
 		<!-- Demos -->
 		<section id="demos" class="ld-section">
 			<div class="ld-wrap">
 				<div class="ld-head-row">
 					<div>
 						<div class="ld-eyebrow">Live demos</div>
-						<h2 class="ld-h2 ld-h2-flush">Running in your browser, right now</h2>
+						<h2 class="ld-h2 ld-h2-flush">Click to open in your browser</h2>
 					</div>
-					<span class="ld-mono-note">open in full screen and inspect source in dev console</span>
+					<span class="ld-mono-note">open a demo and inspect source in dev console</span>
 				</div>
 
 				<div class="ld-demos">
-					<div
-						v-for="demo in liveDemos"
-						:key="demo.title"
-						class="ld-card ld-demo"
-					>
-						<div class="ld-demo-frame">
-							<iframe :src="demo.href" :title="demo.title" loading="lazy" />
-						</div>
-						<div class="ld-demo-meta">
-							<div class="ld-demo-text">
-								<div class="ld-demo-title">{{ demo.title }}</div>
-								<div class="ld-demo-body">{{ demo.body }}</div>
-							</div>
-							<a class="ld-badge ld-badge-accent" :href="demo.href" target="_blank">
-								Full screen &rarr;
-							</a>
-						</div>
-					</div>
-
 					<a
-						v-for="demo in linkedDemos"
+						v-for="demo in demos"
 						:key="demo.title"
 						class="ld-card ld-demo ld-demo-link"
 						:href="demo.href"
@@ -949,13 +928,6 @@ const latestRelease = computed(
 .ld-demo-frame {
 	height: 230px;
 	background: var(--ld-surface-2);
-}
-
-.ld-demo-frame iframe {
-	display: block;
-	width: 100%;
-	height: 100%;
-	border: none;
 }
 
 .ld-demo-frame img {
