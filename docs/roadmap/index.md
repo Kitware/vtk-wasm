@@ -1,4 +1,4 @@
-# Roadmap
+# Feature Status
 
 In August 2025, [WebAssembly support for VTK](https://www.kitware.com/introducing-webassembly-support-in-vtk/) was introduced to enable capabilities from the C++ VTK library in JavaScript through WebAssembly. **VTK.wasm is set to become the de-facto approach for using VTK in JavaScript**. Kitware is expanding the number of C++ classes that are accessible in the JavaScript API. The table below tracks the status of features in VTK WebAssembly, categorized by version.
 

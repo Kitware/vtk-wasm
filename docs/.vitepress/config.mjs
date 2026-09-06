@@ -109,14 +109,14 @@ export default withMermaid(defineConfig({
       // links out rather than hosting the demo gallery or the release history,
       // so both need a nav home of their own.
       nav: [
-        { text: "Guides", link: "/guide/" },
         { text: "API", link: "/api/" },
         { text: "Demos", link: "/demos" },
+        { text: "Guides", link: "/guide/" },
+        { text: "News", link: "/news" },
         {
-          text: "Releases",
+          text: "Roadmap",
           items: [
-            { text: "Latest news", link: "/news" },
-            { text: "Roadmap", link: "/roadmap/" },
+            { text: "Feature Status", link: "/roadmap/" },
             { text: "Module Availability", link: "/roadmap/modules" },
           ],
         },
@@ -186,7 +186,7 @@ export default withMermaid(defineConfig({
         ],
         "/api/": [{ text: "API Reference", link: "/api/" }, ...apiSidebar],
         "/roadmap/": [
-          { text: "Overview", link: "/roadmap/" },
+          { text: "Feature Status", link: "/roadmap/" },
           { text: "Module Availability", link: "/roadmap/modules" },
         ],
         "/usecase/": [{ text: "Examples", link: "/usecase/index" }],
