@@ -58,8 +58,8 @@ const renderer = vtk.vtkRenderer();
 renderer.addActor(actor);
 
 const canvasSelector = session.registerCanvas("!vtk-canvas", canvas);
-const interactor = vtk.vtkRenderWindowInteractor({ canvasSelector });
-const window = vtk.vtkRenderWindow({ interactor, canvasSelector });
+const interactor = vtk.vtkWebAssemblyRenderWindowInteractor({ canvasSelector });
+const window = vtk.vtkWebAssemblyOpenGLRenderWindow({ interactor, canvasSelector });
 window.addRenderer(renderer);
 await window.render();
 interactor.start();
