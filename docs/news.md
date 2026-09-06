@@ -12,6 +12,25 @@ The WASM bundle is available here:
 1. [vtk-9.7.20260830-wasm32-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/7709/download)
 2. [vtk-9.7.20260830-wasm64-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/7708/download)
 
+## Improved support for 64-bit integer arrays in remote session using wasm32
+
+__August 28, 2026__
+
+When the state contained `vtkIdTypeArray` (with 8-byte elements), and a wasm32 remote session receives it, VTK will now transform the 8-byte integer to a 4-byte integer to support such states out of the box. It is very common when using [trame-vtklocal](https://github.com/Kitware/trame-vtklocal) where the VTK python package is 64-bit.
+
+
+## Fixed a TypeError in the remote session API when using wasm64
+
+__August 28, 2026__
+
+The `vtkRemoteSession::Observe` method threw a `TypeError` in wasm64. This is now fixed in [vtk/vtk!13637](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13637) 
+
+## Huge speedup for VTK.wasm source builds!
+
+__August 23, 2026__
+
+[vtk/vtk!13610](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13610) seeds the CMake cache to optimize the build system configuration step. This reduced the time taken by the CMake configure stage from 15-20 minutes down to ~40 seconds!
+
 ## 9.7.20260823 is now available!
 
 __August 23, 2026__
@@ -39,6 +58,12 @@ pip install "vtk==9.7.20260816.dev0" --extra-index-url https://wheels.vtk.org
 The WASM bundle is available here:
 [vtk-9.7.20260816-wasm32-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/7597/download)
 
+## Get read-write access into vtkDataArray memory as a JavaScript typed array
+
+__August 10, 2026__
+
+You can now manipulate vtkDataArray contents by accessing a view of the memory as a JS typed array. See [vtk/vtk!13532](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13532) for details and the [TypedArrayInterface](https://kitware.github.io/vtk-wasm/api/@kitware/vtk-wasm/interfaces/TypedArrayInterface.html) documentation.
+
 ## 9.7.20260809 is now available!
 
 __August 09, 2026__
@@ -52,6 +77,20 @@ pip install "vtk==9.7.20260809.dev0" --extra-index-url https://wheels.vtk.org
 The WASM bundle is available here:
 1. [vtk-9.7.20260809-wasm32-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/7530/download)
 2. [vtk-9.7.20260809-wasm64-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/7533/download)
+
+## Introduce CMake presets for building VTK.wasm libraries
+
+__Auguest 06, 2026__
+
+We added CMake presets to simplify source builds for VTK.wasm.
+If you would rather not manage the toolchain yourself, VTK ships wasm presets that do it for you.
+They require only CMake 3.25 or newer, Ninja and a python3 interpreter:
+
+```sh
+cmake --workflow --preset wasm32   # or wasm64
+```
+
+See [vtk/vtk!13535](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13535) for details.
 
 ## 9.7.20260802 is now available!
 
@@ -67,6 +106,21 @@ The WASM bundle is available here:
 1. [vtk-9.7.20260802-wasm32-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/7452/download)
 2. [vtk-9.7.20260802-wasm64-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/7453/download)
 
+## Disable vtkGenericRenderWindowInteractor in WASM bundle
+
+__July 31, 2026__
+
+When the WASM bundle deserialized a state containing `vtkGenericRenderWindowInteractor`, you could not interact
+with the application because an event loop was not started. This bug was fixed in [vtk/vtk!13509](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13509).
+
+
+## Fixed serialization in vtkDataSetMapper when it was given vtkPolyData input
+
+__July 31, 2026__
+
+The mapper serialized into a state whose polydata field was empty. This bug was fixed in [vtk/vtk!13509](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13509).
+
+
 ## 9.7.20260726 is now available!
 
 __July 26, 2026__
@@ -80,6 +134,13 @@ pip install "vtk==9.7.20260726.dev0" --extra-index-url https://wheels.vtk.org
 The WASM bundle is available here:
 1. [vtk-9.7.20260726-wasm32-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/7377/download)
 2. [vtk-9.7.20260726-wasm64-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/7374/download)
+
+## JSON manifest containing type information is now emitted upstream!
+
+__July 24, 2026__
+
+VTK's serdes wrapping tool learnt to generate JSON description that contains data types
+of the properties, and methods of every class that gets marshalled. See [vtk/vtk!13431](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13431) and [vtk/vtk!13498](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13498) for details.
 
 ## 9.7.20260719 is now available!
 
