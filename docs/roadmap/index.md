@@ -11,6 +11,9 @@ import roadMapData from './features.json';
 ## Planned in next release
 <FeatureStatusTable version-group="planned" />
 
+## Released in weekly dev binaries
+<FeatureStatusTable version-group="implemented-in-9.7.YYYYMMDD.dev0" />
+
 ## Released in 9.7.x
 <FeatureStatusTable version-group="implemented-in-9.7.x" />
 

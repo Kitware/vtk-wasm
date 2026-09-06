@@ -6,150 +6,44 @@ import newsSource from '../../../news.md?raw'
 // Snippet sources live in the data loader so Shiki can highlight them at build
 // time; `snippets[key]` is ready-to-render markup, not a raw string.
 import { data as snippets } from '../snippets.data.mjs'
+import { data as npmPackage } from '../npmVersion.data.mjs'
+import { featuredDemos } from '../demos.mjs'
+import { useJspi } from '../useJspi.mjs'
 
-// Each entry point gets its own “How it works” chain, rendered under the tab
-// list. The steps are language-specific on purpose: the C++ path is a build
-// pipeline, the JavaScript path is a load pipeline, and trame is neither.
+// One row per entry point. Each is a single install line plus the snippet it
+// produces — the long "how it works" chains live in the guides these link to.
 const tabs = [
 	{
 		id: 'ts',
 		label: 'TypeScript',
-		hint: 'typed bindings',
 		file: 'viewer.ts',
-		badge: 'generated .d.ts',
+		install: 'npm i @kitware/vtk-wasm && npx vtk-wasm gen-types --url <bundle>',
 		note: 'Types match the bundle you load.',
 		link: withBase('/guide/js/typescript'),
-		steps: [
-			{
-				num: '01',
-				title: 'Install the package',
-				body: 'The same package as the JavaScript path; types ship with it.',
-				code: 'npm i @kitware/vtk-wasm',
-			},
-			{
-				num: '02',
-				title: 'Generate declarations',
-				body: 'A CLI reads the per-class manifests out of your VTK.wasm bundle.',
-				code: 'npx vtk-wasm gen-types --url <bundle>',
-			},
-			{
-				num: '03',
-				title: 'Include the output',
-				body: 'Drop the .d.ts anywhere tsconfig already picks up, such as src/.',
-				code: 'src/vtk-wasm.gen.d.ts',
-			},
-			{
-				num: '04',
-				title: 'Write typed VTK',
-				body: 'Per-class methods, properties, and class-typed arguments all check.',
-				code: 'vtk.vtkConeSource({ resolution: 32 })',
-			},
-		],
 	},
 	{
 		id: 'js',
 		label: 'JavaScript',
-		hint: 'load a module',
 		file: 'viewer.js',
-		badge: 'ES module',
+		install: 'npm i @kitware/vtk-wasm',
 		note: 'Works with any bundler, or none.',
 		link: withBase('/guide/js/loading'),
-		steps: [
-			{
-				num: '01',
-				title: 'Reach the loader',
-				body: 'A script tag on the page, or an import from your bundler.',
-				code: 'npm i @kitware/vtk-wasm',
-			},
-			{
-				num: '02',
-				title: 'Load the runtime',
-				body: 'Fetches and instantiates the WASM bundle. Cached per URL.',
-				code: 'await loadAsync({ url })',
-			},
-			{
-				num: '03',
-				title: 'Open a session',
-				body: 'Standalone renders in the browser; remote mirrors a server scene.',
-				code: 'runtime.createStandaloneSession()',
-			},
-			{
-				num: '04',
-				title: 'Build and render',
-				body: 'Create VTK objects from session.vtk and bind them to a canvas.',
-				code: 'session.registerCanvas(...)',
-			},
-		],
 	},
 	{
 		id: 'cpp',
 		label: 'C++',
-		hint: 'compile your app',
 		file: 'main.cxx',
-		badge: 'emscripten',
+		install: 'emcmake cmake -GNinja -B build && cmake --build build',
 		note: 'One source tree, native and web.',
 		link: withBase('/guide/cpp/'),
-		steps: [
-			{
-				num: '01',
-				title: 'Write VTK C++',
-				body: 'Leverage your existing pipeline with readers, filters, and rendering.',
-				code: 'main.cxx',
-			},
-			{
-				num: '02',
-				title: 'Configure',
-				body: 'Point CMake at a VTK built for Emscripten. No forks, no patched VTK.',
-				code: 'emcmake cmake -GNinja -B build',
-			},
-			{
-				num: '03',
-				title: 'Compile',
-				body: 'Emscripten emits a .wasm module plus a thin JavaScript loader.',
-				code: 'cmake --build build',
-			},
-			{
-				num: '04',
-				title: 'Serve statically',
-				body: 'Any static host. Rendering happens on the visitor’s own GPU.',
-				code: 'app.wasm + app.js',
-			},
-		],
 	},
 	{
 		id: 'trame',
 		label: 'trame',
-		hint: 'Python front end',
 		file: 'app.py',
-		badge: 'python 3.10+',
+		install: 'pip install "trame-vtklocal"',
 		note: 'Logic in Python, rendering local.',
 		link: withBase('/guide/trame/'),
-		steps: [
-			{
-				num: '01',
-				title: 'Install the widget',
-				body: 'Alongside trame itself and a VTK wheel from wheels.vtk.org.',
-				code: 'pip install "trame-vtklocal"',
-			},
-			{
-				num: '02',
-				title: 'Build the scene in Python',
-				body: 'Leverage the simple pythonic interface to VTK',
-				code: 'vtkRenderWindow()',
-			},
-			{
-				num: '03',
-				title: 'Hand it to the widget',
-				body: 'LocalView ships the render window to the browser as WASM.',
-				code: 'vtklocal.LocalView(render_window)',
-			},
-			{
-				num: '04',
-				title: 'Start the server',
-				body: 'Logic stays in Python; rendering runs on the visitor’s GPU.',
-				code: 'server.start()',
-			},
-		],
 	},
 ]
 
@@ -158,206 +52,173 @@ const active = computed(
 	() => tabs.find((tab) => tab.id === activeTab.value) || tabs[0],
 )
 
-// Every card is a screenshot linking out to the real demo: embedding live WASM
-// instances in iframes was spiking page memory on first load.
-const demos = [
+const hasJspi = useJspi()
+
+// The three strongest screenshots; the rest live on /demos.
+const shots = featuredDemos.map((demo) => ({
+	...demo,
+	href: withBase(demo.href),
+	image: withBase(demo.image),
+}))
+
+// The architecture stack, read top-down: how the runtime gets loaded, what it
+// hands back, what crosses the WASM boundary, and what runs on the far side.
+// The repeated card lists live here; each layer's one-off parts (the loadAsync
+// callout, the teardown line, the canvas bar) are written out in the template.
+const loadEntries = [
+	{ term: '<script src="\u2026">', body: 'Global vtkwasm on window' },
 	{
-		href: withBase('/demo/wave-app-ts/index.html'),
-		title: 'Dynamic mesh',
-		body: 'Render dynamic geometry',
-		image: withBase('/demo-screenshots/wave-app-ts.png'),
+		term: 'import { loadAsync }',
+		body: 'Bundler import from the npm package',
 	},
 	{
-		href: withBase('/demo/volume.html'),
-		title: 'Volume rendering',
-		body: '531k voxels ray cast on the GPU, change transfer function preset',
-		image: withBase('/demo-screenshots/volume.png'),
+		term: 'Annotation script tag',
+		body: 'Loads the runtime and opens a standalone session in one step',
+		auto: true,
+	},
+]
+
+const sessions = [
+	{
+		name: 'StandaloneSession',
+		kind: 'local',
+		body: 'session.vtk creates objects, builds the pipeline and renders.',
+		calls: ['vtkConeSource()', 'vtkActor()', 'registerCanvas()'],
 	},
 	{
-		href: withBase('/demo/camera-guide-app-ts/index.html'),
-		title: 'Camera guide',
-		body: 'Camera',
-		image: withBase('/demo-screenshots/camera-guide-app-ts.png'),
+		name: 'RemoteSession',
+		kind: 'driven',
+		body: 'State arrives from elsewhere. Bind a transport and a canvas, then apply updates.',
+		calls: ['bindNetwork()', 'bindCanvas()', 'update()'],
 	},
-	{
-		href: withBase('/demo/viewer-porsche.html'),
-		title: 'Porsche',
-		body: 'Multi-actor CAD assembly, picking',
-		image: withBase('/demo-screenshots/viewer-porsche.png'),
-	},
-	{
-		href: withBase('/demo/terrain.html'),
-		title: 'Procedural terrain',
-		body: '351k triangles built in the browser, hit Generate',
-		image: withBase('/demo-screenshots/terrain.png'),
-	},
-	{
-		href: withBase('/demo/simple-app/index.html'),
-		title: 'Scalar bar widget',
-		body: 'Scalar bar widget',
-		image: withBase('/demo-screenshots/simple-app.png'),
-	},
-	{
-		href: withBase('/demo/viewer-starfighter2.html'),
-		title: 'Starfighter',
-		body: 'Interactive widgets',
-		image: withBase('/demo-screenshots/viewer-starfighter2.png'),
-	},
-	{
-		href: withBase('/demo/actors.html'),
-		title: 'A thousand actors and more',
-		body: 'Every object its own vtkActor, add more to test performance',
-		image: withBase('/demo-screenshots/actors.png'),
-	},
-	{
-		href: withBase('/demo/text-ts/index.html'),
-		title: 'Text actor',
-		body: 'Draw text',
-		image: withBase('/demo-screenshots/text-ts.png'),
-	},
+]
+
+const marshallers = [
+	{ term: 'Serializer', body: 'C++ objects \u2192 state' },
+	{ term: 'Deserializer', body: 'state \u2192 C++ objects' },
+]
+
+const marshalContext = [
+	{ term: 'Weak objects', body: 'Borrowed handles' },
+	{ term: 'Strong objects', body: 'Owned, ref-counted' },
+	{ term: 'States', body: 'JSON per object' },
+	{ term: 'Blobs', body: 'Binary arrays' },
+]
+
+const vtkLayers = [
+	{ term: 'Sources & filters', body: 'Readers, geometry, algorithms' },
+	{ term: 'Mappers & actors', body: 'Scene graph and properties' },
+	{ term: 'Render window', body: 'Renderers, cameras, lights' },
+	{ term: 'Interactor', body: 'Event loop, trackball styles' },
 ]
 
 // docs/news.md is the single source of truth for releases; parse the two most
 // recent entries out of it rather than duplicating them here.
-const news = computed(() => {
-	return newsSource
+const news = computed(() =>
+	newsSource
 		.split(/^## /m)
 		.slice(1)
 		.map((block) => {
 			const title = block.slice(0, block.indexOf('\n')).trim()
 			const date = block.match(/^__(.+?)__$/m)?.[1] ?? ''
-			const code = block.match(/```sh\n([\s\S]*?)\n```/)?.[1]?.trim() ?? ''
-			return { title, date, code }
+			return { title, date }
 		})
 		.filter((item) => item.title)
-		.slice(0, 2)
-})
+		.slice(0, 3),
+)
 
 const featureRows = (groupKey) =>
 	(featuresData.featureVersionGroups?.[groupKey]?.features ?? [])
 		.map((entry) => Object.values(entry ?? {})[0])
 		.filter(Boolean)
 
-// Everything still open, then the most recent release, capped at five rows so
-// the panel stays level with the news column beside it.
-const LATEST_RELEASE_GROUP = 'implemented-in-9.7.x'
+const version = (title) => title.replace(/ is now available!?$/, '')
 
-const roadmap = computed(() => {
-	const planned = featureRows('planned').map((item) => ({
-		status: 'planned',
-		tone: 'planned',
-		title: item.description,
-		body: 'Targeted for the next release.',
-	}))
-	const shipped = featureRows(LATEST_RELEASE_GROUP).map((item) => ({
-		status: 'shipped',
+// One flat table: what shipped, then what is queued. Reading down the first
+// column gives the release history; reading down the second gives the state.
+const status = computed(() => [
+	...news.value.map((item) => ({
+		key: version(item.title),
+		state: 'released',
 		tone: 'shipped',
-		title: item.description,
-		body: `Released in ${item.version}.`,
-	}))
-	return [...planned, ...shipped].slice(0, 5)
-})
-
-const latestRelease = computed(
-	() => news.value[0]?.title.replace(/ is now available!?$/, '') ?? '',
-)
+		detail: item.date,
+	})),
+	...featureRows('planned').map((item) => ({
+		key: 'next',
+		state: 'planned',
+		tone: 'planned',
+		detail: item.description,
+	})),
+])
 </script>
 
 <template>
 	<div class="landing">
-		<!-- Hero -->
-		<section id="top" class="ld-section ld-hero">
-			<div class="ld-hero-glow" aria-hidden="true" />
-			<div class="ld-wrap ld-hero-grid">
-				<div>
-					<div class="ld-eyebrow ld-eyebrow-accent">
-						C++ &rarr; WebAssembly &rarr; Browser
-					</div>
-					<h1 class="ld-h1">Run the real VTK in a browser tab.</h1>
-					<p class="ld-lede">
-						The same C++ rendering and filtering pipeline that ships in desktop
-						VTK, compiled to WebAssembly and drawn with WebGL/WebGPU. No
-						server-side rendering, no pixel streaming, no rewrite.
-					</p>
-					<div class="ld-cta">
-						<a class="ld-btn ld-btn-primary" :href="withBase('/guide/')">
-							Getting started
-						</a>
-						<a class="ld-btn ld-btn-ghost" href="#demos">See live demos</a>
-					</div>
-					<div class="ld-stats">
-						<div class="ld-stat">
-							<div class="ld-stat-value">0</div>
-							<div class="ld-stat-label">GPU servers required</div>
-						</div>
-						<div class="ld-stat">
-							<div class="ld-stat-value">4</div>
-							<div class="ld-stat-label">languages, one runtime</div>
-						</div>
-					</div>
-				</div>
-
-				<div class="ld-panel">
-					<div class="ld-panel-bar">
-						<span class="ld-dot" />
-						<span class="ld-dot" />
-						<span class="ld-dot" />
-						<span class="ld-panel-name">main.ts</span>
-					</div>
-					<!-- eslint-disable-next-line vue/no-v-html -- build-time Shiki output, see snippets.data.js -->
-					<div class="ld-code vp-code" v-html="snippets.hero" />
-					<div class="ld-panel-foot">
-						<span class="ld-pip" />
-						renders an interactive scene, client-side
-					</div>
-				</div>
+		<!-- Masthead: wordmark left, the published npm coordinate right. -->
+		<header class="ld-masthead">
+			<div class="ld-wrap ld-masthead-row">
+				<span class="ld-wordmark">VTK.wasm</span>
+				<span v-if="npmPackage.version" class="ld-masthead-meta">
+					v{{ npmPackage.version }}
+				</span>
 			</div>
-		</section>
+		</header>
 
-		<!-- Demos -->
-		<section id="demos" class="ld-section">
+		<section class="ld-lead">
 			<div class="ld-wrap">
-				<div class="ld-head-row">
-					<div>
-						<div class="ld-eyebrow">Live demos</div>
-						<h2 class="ld-h2 ld-h2-flush">Click to open in your browser</h2>
-					</div>
-					<span class="ld-mono-note">open a demo and inspect source in dev console</span>
-				</div>
-
-				<div class="ld-demos">
-					<a
-						v-for="demo in demos"
-						:key="demo.title"
-						class="ld-card ld-demo ld-demo-link"
-						:href="demo.href"
-						target="_blank"
-					>
-						<div class="ld-demo-frame">
-							<img :src="demo.image" :alt="demo.title" loading="lazy" />
-						</div>
-						<div class="ld-demo-meta">
-							<div class="ld-demo-text">
-								<div class="ld-demo-title">{{ demo.title }}</div>
-								<div class="ld-demo-body">{{ demo.body }}</div>
-							</div>
-							<span class="ld-badge ld-badge-accent">Open &rarr;</span>
-						</div>
-					</a>
+			    <h1 class="ld-h1">See your <u>scientific data</u> on the web using the <u>Visualization ToolKit</u>.</h1>
+				<p class="ld-lede">
+				VTK.wasm gives you VTK C++ compiled for the browser,
+				so you can move the data processing and rendering
+				pipelines you are already familiar with from desktop VTK
+				to the browser through WebAssembly, WebGL, and WebGPU
+				</p>
+				<div class="ld-lead-links">
+					<a :href="withBase('/guide/')">Getting started &rarr;</a>
+					<a href="https://github.com/Kitware/vtk-wasm">Source &rarr;</a>
 				</div>
 			</div>
 		</section>
 
-		<!-- Entry points -->
-		<section id="guides" class="ld-section ld-section-alt">
-			<div class="ld-wrap ld-split">
-				<div>
-					<div class="ld-eyebrow">Four entry points</div>
-					<h2 class="ld-h2">Pick the language you already write</h2>
-					<p class="ld-body">
-						Each path ends at the same WASM module. Start where your codebase
-						already is.
+		<section id="demos" class="ld-row">
+			<div class="ld-wrap ld-row-grid">
+				<h2 class="ld-row-label">Demos</h2>
+				<div class="ld-row-body">
+					<p v-if="!hasJspi" class="ld-warn">
+						These demos need the WebAssembly JSPI API. WebKit has not shipped
+						it, so they cannot run in Safari or in any browser on iOS — open
+						this page in Chrome or Edge.
 					</p>
+					<div class="ld-shots">
+						<figure v-for="shot in shots" :key="shot.title" class="ld-shot">
+							<a
+								v-if="hasJspi"
+								class="ld-shot-frame"
+								:href="shot.href"
+								target="_blank"
+							>
+								<img :src="shot.image" :alt="shot.title" loading="lazy" />
+							</a>
+							<div v-else class="ld-shot-frame">
+								<img :src="shot.image" :alt="shot.title" loading="lazy" />
+							</div>
+							<figcaption class="ld-shot-cap">
+								<span class="ld-shot-title">{{ shot.title }}</span>
+								<span class="ld-shot-body">{{ shot.body }}</span>
+							</figcaption>
+						</figure>
+					</div>
+					<div class="ld-row-foot">
+						<a :href="withBase('/demos')">All demos &rarr;</a>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section id="guides" class="ld-row">
+			<div class="ld-wrap ld-row-grid">
+				<h2 class="ld-row-label">Get it</h2>
+				<div class="ld-row-body">
 					<div class="ld-tabs" role="tablist">
 						<button
 							v-for="tab in tabs"
@@ -369,73 +230,180 @@ const latestRelease = computed(
 							:aria-selected="tab.id === active.id"
 							@click="activeTab = tab.id"
 						>
-							<span class="ld-tab-label">{{ tab.label }}</span>
-							<span class="ld-tab-hint">{{ tab.hint }}</span>
+							{{ tab.label }}
 						</button>
 					</div>
 
-					<div class="ld-flow">
-						<div class="ld-eyebrow ld-flow-head">How it works</div>
-						<ol class="ld-flow-list">
-							<li
-								v-for="step in active.steps"
-								:key="step.num"
-								class="ld-flow-step"
-							>
-								<div class="ld-step-num">{{ step.num }}</div>
-								<div class="ld-step-title">{{ step.title }}</div>
-								<div class="ld-step-body">{{ step.body }}</div>
-								<div class="ld-chip-code">{{ step.code }}</div>
-							</li>
-						</ol>
-					</div>
-				</div>
+					<div class="ld-install">{{ active.install }}</div>
 
-				<div class="ld-panel">
-					<div class="ld-panel-bar ld-panel-bar-split">
-						<span class="ld-panel-name">{{ active.file }}</span>
-						<span class="ld-badge">{{ active.badge }}</span>
-					</div>
-					<!-- eslint-disable-next-line vue/no-v-html -- build-time Shiki output, see snippets.data.js -->
-					<div class="ld-code ld-code-tall vp-code" v-html="snippets[active.id]" />
-					<div class="ld-panel-foot ld-panel-foot-links">
+					<!-- eslint-disable-next-line vue/no-v-html -- build-time Shiki output, see snippets.data.mjs -->
+					<div class="ld-code vp-code" v-html="snippets[active.id]" />
+
+					<div class="ld-row-foot">
 						<a :href="active.link">Read the {{ active.label }} guide &rarr;</a>
-						<span class="ld-muted">{{ active.note }}</span>
+						<span>{{ active.file }} &middot; {{ active.note }}</span>
 					</div>
 				</div>
 			</div>
 		</section>
 
-		<!-- News + roadmap -->
-		<section id="news" class="ld-section">
-			<div class="ld-wrap ld-split">
-				<div>
-					<div class="ld-eyebrow ld-eyebrow-gap">Latest</div>
-					<div v-for="item in news" :key="item.title" class="ld-rule-item">
-						<div class="ld-news-date">{{ item.date }}</div>
-						<div class="ld-news-title">{{ item.title }}</div>
-						<div v-if="item.code" class="ld-chip-code">{{ item.code }}</div>
-					</div>
-					<div class="ld-rule-foot">
-						<a :href="withBase('/news')">All release notes &rarr;</a>
-					</div>
+		<section id="about" class="ld-row">
+			<div class="ld-wrap ld-row-grid">
+				<h2 class="ld-row-label">Architecture</h2>
+				<div class="ld-row-body">
+					<ol class="ld-arch">
+						<li class="ld-arch-layer">
+							<div class="ld-arch-head">
+								<span class="ld-arch-name">Load</span>
+								<span class="ld-arch-rule" />
+								<span class="ld-arch-note">three entry points</span>
+							</div>
+							<ul class="ld-arch-cards">
+								<li
+									v-for="entry in loadEntries"
+									:key="entry.term"
+									class="ld-arch-card"
+									:class="{ 'is-auto': entry.auto }"
+								>
+									<span class="ld-arch-term">{{ entry.term }}</span>
+									<span class="ld-arch-text">{{ entry.body }}</span>
+								</li>
+							</ul>
+							<!-- The one call every entry point above funnels into. -->
+							<div class="ld-arch-call">
+								<div class="ld-arch-call-main">
+									<span class="ld-arch-sig">loadAsync({ url, rendering })</span>
+									<span class="ld-arch-text">
+										Fetches and instantiates the bundle, in webgl or webgpu.
+									</span>
+								</div>
+								<div class="ld-arch-returns">
+									<span class="ld-arch-key">returns</span>
+									<span class="ld-arch-chip is-acc">VtkWasmRuntime</span>
+								</div>
+							</div>
+						</li>
+
+						<li class="ld-arch-layer">
+							<div class="ld-arch-head">
+								<span class="ld-arch-name">Runtime &amp; sessions</span>
+								<span class="ld-arch-rule" />
+								<span class="ld-arch-note">one session, cached per url + config</span>
+							</div>
+							<ul class="ld-arch-cards ld-arch-cards-wide">
+								<li
+									v-for="item in sessions"
+									:key="item.name"
+									class="ld-arch-card"
+								>
+									<span class="ld-arch-card-head">
+										<span class="ld-arch-term">{{ item.name }}</span>
+										<span class="ld-arch-key">{{ item.kind }}</span>
+									</span>
+									<span class="ld-arch-text">{{ item.body }}</span>
+									<span class="ld-arch-chips">
+										<span
+											v-for="call in item.calls"
+											:key="call"
+											class="ld-arch-chip"
+										>
+											{{ call }}
+										</span>
+									</span>
+								</li>
+							</ul>
+							<div class="ld-arch-foot">
+								<span class="ld-arch-key">teardown</span>
+								<span class="ld-arch-chip">session.dispose()</span>
+								<span class="ld-arch-then">then</span>
+								<span class="ld-arch-chip">runtime.dispose()</span>
+							</div>
+						</li>
+
+						<li class="ld-arch-layer">
+							<div class="ld-arch-head">
+								<span class="ld-arch-name">The WASM boundary</span>
+								<span class="ld-arch-rule" />
+								<span class="ld-arch-note">ObjectManager</span>
+							</div>
+							<div class="ld-arch-marshal">
+								<ul class="ld-arch-cards ld-arch-cards-stack">
+									<li
+										v-for="item in marshallers"
+										:key="item.term"
+										class="ld-arch-card"
+									>
+										<span class="ld-arch-term">{{ item.term }}</span>
+										<span class="ld-arch-text">{{ item.body }}</span>
+									</li>
+								</ul>
+								<!-- aria-hidden: decorative; the two cards either side say it. -->
+								<span class="ld-arch-swap" aria-hidden="true">&#8646;</span>
+								<div class="ld-arch-panel">
+									<span class="ld-arch-card-head">
+										<span class="ld-arch-term">Marshal context</span>
+										<span class="ld-arch-note">one registry per session</span>
+									</span>
+									<ul class="ld-arch-cards ld-arch-cards-tight">
+										<li
+											v-for="item in marshalContext"
+											:key="item.term"
+											class="ld-arch-card"
+										>
+											<span class="ld-arch-term">{{ item.term }}</span>
+											<span class="ld-arch-text">{{ item.body }}</span>
+										</li>
+									</ul>
+								</div>
+							</div>
+						</li>
+
+						<li class="ld-arch-layer">
+							<div class="ld-arch-head">
+								<span class="ld-arch-name">Real VTK, compiled</span>
+								<span class="ld-arch-rule" />
+								<span class="ld-arch-note">the desktop pipeline, unchanged</span>
+							</div>
+							<ul class="ld-arch-cards">
+								<li
+									v-for="item in vtkLayers"
+									:key="item.term"
+									class="ld-arch-card"
+								>
+									<span class="ld-arch-term">{{ item.term }}</span>
+									<span class="ld-arch-text">{{ item.body }}</span>
+								</li>
+							</ul>
+							<div class="ld-arch-call">
+								<span class="ld-arch-sig">&lt;canvas&gt;</span>
+								<span class="ld-arch-wire" />
+								<span class="ld-arch-chip is-acc">WebGL</span>
+								<span class="ld-arch-chip is-acc">WebGPU</span>
+								<span class="ld-arch-text">
+									Drawn on the client GPU, at interactive frame rates.
+								</span>
+							</div>
+						</li>
+					</ol>
 				</div>
-				<div id="roadmap">
-					<div class="ld-eyebrow ld-eyebrow-gap">Next</div>
-					<div
-						v-for="item in roadmap"
-						:key="item.title"
-						class="ld-rule-item ld-roadmap-item"
-					>
-						<span class="ld-badge" :class="`ld-badge-${item.tone}`">
-							{{ item.status }}
-						</span>
-						<div>
-							<div class="ld-roadmap-title">{{ item.title }}</div>
-							<div class="ld-roadmap-body">{{ item.body }}</div>
+			</div>
+		</section>
+
+		<section id="status" class="ld-row">
+			<div class="ld-wrap ld-row-grid">
+				<h2 class="ld-row-label">Status</h2>
+				<div class="ld-row-body">
+					<dl class="ld-status">
+						<div v-for="item in status" :key="item.key + item.detail" class="ld-status-row">
+							<dt class="ld-status-key">{{ item.key }}</dt>
+							<dd class="ld-status-state" :class="`ld-status-${item.tone}`">
+								{{ item.state }}
+							</dd>
+							<dd class="ld-status-detail">{{ item.detail }}</dd>
 						</div>
-					</div>
-					<div class="ld-rule-foot">
+					</dl>
+					<div class="ld-row-foot">
+						<a :href="withBase('/news')">Release notes &rarr;</a>
 						<a :href="withBase('/roadmap/')">Full roadmap &rarr;</a>
 					</div>
 				</div>
@@ -444,21 +412,14 @@ const latestRelease = computed(
 
 		<footer class="ld-footer">
 			<div class="ld-wrap ld-footer-row">
-				<a class="ld-footer-mark" :href="withBase('/')">
-					<img :src="withBase('/logo.svg')" alt="VTK.wasm" />
-				</a>
 				<nav class="ld-footer-links">
 					<a :href="withBase('/guide/')">Guides</a>
 					<a :href="withBase('/api/')">API</a>
-					<a :href="withBase('/roadmap/')">Roadmap</a>
-					<a href="https://gitlab.kitware.com/groups/vtk/-/issues">Issue tracker</a>
+					<a :href="withBase('/demos')">Demos</a>
+					<a href="https://github.com/Kitware/vtk-wasm/issues">Issues</a>
 					<a href="https://www.kitware.com/support">Support</a>
 				</nav>
-				<div class="ld-footer-spacer" />
-				<div class="ld-footer-note">
-					<span v-if="latestRelease">Latest: {{ latestRelease }} · </span>
-					Maintained by Kitware
-				</div>
+				<span class="ld-footer-note">Maintained by Kitware</span>
 			</div>
 		</footer>
 	</div>
@@ -466,6 +427,10 @@ const latestRelease = computed(
 
 <style scoped>
 /*
+ * Spec-sheet landing: one measured column, mono labels in a left gutter,
+ * hairline rules between rows. No cards, no panel chrome, no gradients — the
+ * page should read like a datasheet, not a brochure.
+ *
  * The --ld-* palette tokens live in theme/colors.css, where they also drive the
  * default theme's --vp-* surfaces so the rest of the site matches this page.
  */
@@ -484,241 +449,523 @@ const latestRelease = computed(
 	color: var(--ld-acc-hi);
 }
 
-/* Full-bleed: sections span the viewport, with only a gutter holding content
-   off the edge. Individual prose blocks keep their own ch-based measure. */
 .ld-wrap {
 	width: 100%;
+	max-width: 1060px;
 	margin: 0 auto;
-	padding: 0 clamp(20px, 3.5vw, 56px);
+	padding: 0 clamp(20px, 4vw, 36px);
 }
 
-.ld-section {
-	border-bottom: 1px solid var(--ld-line-soft);
-	padding: clamp(52px, 8vw, 88px) 0;
+/* --- Masthead --------------------------------------------------------- */
+
+.ld-masthead {
+	border-bottom: 1px solid var(--ld-line);
 }
 
-.ld-section-alt {
-	background: var(--ld-bg-alt);
+.ld-masthead-row {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 20px;
+	padding-top: 26px;
+	padding-bottom: 14px;
 }
 
-/* --- Type ------------------------------------------------------------- */
-
-.ld-eyebrow {
+.ld-wordmark {
 	font-family: 'IBM Plex Mono', monospace;
 	font-size: 12px;
 	letter-spacing: 0.14em;
 	text-transform: uppercase;
-	color: var(--ld-mute);
-	margin-bottom: 14px;
 }
 
-.ld-eyebrow-accent {
-	color: var(--ld-acc-text);
-	margin-bottom: 22px;
+.ld-wordmark {
+	color: var(--ld-text);
+	font-weight: 500;
 }
 
-.ld-eyebrow-gap {
-	margin-bottom: 20px;
+.ld-masthead-meta {
+	font-family: 'IBM Plex Mono', monospace;
+	font-size: 12px;
+	letter-spacing: 0.06em;
+	color: var(--ld-body);
+}
+
+/* Below the breakpoint the meta line cannot sit beside the wordmark without
+   wrapping mid-list, so stack the title block instead. */
+@media (max-width: 619px) {
+	.ld-masthead-row {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 6px;
+	}
+}
+
+/* --- Lead ------------------------------------------------------------- */
+
+.ld-lead {
+	padding: clamp(44px, 7vw, 76px) 0 clamp(36px, 5vw, 56px);
 }
 
 .ld-h1 {
-	font-size: clamp(36px, 6.4vw, 58px);
-	line-height: 1.05;
-	letter-spacing: -0.032em;
+	font-size: clamp(32px, 5vw, 46px);
+	line-height: 1.1;
+	letter-spacing: -0.028em;
 	font-weight: 600;
 	color: var(--ld-text);
 	margin: 0 0 20px;
+	max-width: 20ch;
 	text-wrap: balance;
 }
 
-.ld-h2 {
-	font-size: clamp(26px, 4.2vw, 34px);
-	line-height: 1.15;
-	letter-spacing: -0.022em;
-	font-weight: 600;
-	color: var(--ld-text);
-	margin: 0 0 12px;
-}
-
-.ld-h2-flush {
-	margin-bottom: 0;
-}
-
 .ld-lede {
-	font-size: 18px;
+	font-size: 17px;
 	line-height: 1.6;
 	color: var(--ld-body);
-	margin: 0 0 30px;
-	max-width: 46ch;
-	text-wrap: pretty;
-}
-
-.ld-body {
-	font-size: 16px;
-	line-height: 1.65;
-	color: var(--ld-body);
 	margin: 0 0 26px;
+	max-width: 62ch;
 	text-wrap: pretty;
 }
 
-.ld-muted {
-	color: var(--ld-mute);
-}
-
-.ld-mono-note {
-	font-family: 'IBM Plex Mono', monospace;
-	font-size: 12px;
-	color: var(--ld-mute);
-}
-
-/* --- Hero ------------------------------------------------------------- */
-
-.ld-hero {
-	position: relative;
-}
-
-.ld-hero-glow {
-	position: absolute;
-	inset: 0;
-	background: radial-gradient(
-		900px 420px at 22% -10%,
-		var(--ld-acc-glow),
-		transparent 70%
-	);
-	pointer-events: none;
-}
-
-.ld-hero-grid {
-	position: relative;
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-	gap: clamp(36px, 5vw, 64px);
-	align-items: center;
-}
-
-.ld-cta {
+.ld-lead-links {
 	display: flex;
-	gap: 12px;
+	gap: 26px;
 	flex-wrap: wrap;
-	margin-bottom: 34px;
+	font-size: 15px;
 }
 
-.ld-btn {
-	font-size: 15px;
-	font-weight: 500;
-	padding: 12px 22px;
-	border-radius: 7px;
-	transition: background-color 0.2s, border-color 0.2s;
+/* --- Rows ------------------------------------------------------------- */
+
+.ld-row {
+	border-top: 1px solid var(--ld-line);
+	padding: clamp(32px, 4.5vw, 48px) 0;
 }
 
 /*
- * The buttons are anchors, so every rule here has to outrank the generic
- * `.landing a` / `.landing a:hover` link colours above — hence the `:deep()`
- * descendant form rather than a bare `.ld-btn-*` selector.
+ * Label in a fixed gutter, content in the remaining track. The gutter collapses
+ * below 760px, where the label simply sits above its row.
  */
-.landing :deep(.ld-btn-primary) {
-	color: var(--ld-acc-on);
-	background: var(--ld-acc);
+.ld-row-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 18px;
 }
 
-.landing :deep(.ld-btn-primary:hover) {
-	background: var(--ld-acc-hi);
-	color: var(--ld-acc-on);
+@media (min-width: 760px) {
+	.ld-row-grid {
+		grid-template-columns: 170px minmax(0, 1fr);
+		gap: 40px;
+	}
 }
 
-.landing :deep(.ld-btn-ghost) {
-	color: var(--ld-text);
-	border: 1px solid var(--ld-line);
-}
-
-.landing :deep(.ld-btn-ghost:hover) {
-	border-color: var(--ld-acc);
-	background: var(--ld-surface-2);
-	color: var(--ld-text);
-}
-
-.ld-stats {
-	display: flex;
-	gap: 34px;
-	flex-wrap: wrap;
+.ld-row-label {
 	font-family: 'IBM Plex Mono', monospace;
-}
-
-.ld-stat-value {
-	font-size: 24px;
-	color: var(--ld-text);
-	font-weight: 500;
-}
-
-.ld-stat-label {
 	font-size: 12px;
-	color: var(--ld-mute);
-	margin-top: 4px;
+	font-weight: 400;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--ld-body);
+	margin: 0;
+	padding-top: 2px;
 }
 
-/* --- Code panel ------------------------------------------------------- */
+.ld-row-body {
+	min-width: 0;
+}
 
-.ld-panel {
+.ld-body {
+	font-size: 15.5px;
+	line-height: 1.65;
+	color: var(--ld-body);
+	margin: 0 0 24px;
+	max-width: 68ch;
+	text-wrap: pretty;
+}
+
+/*
+ * Row footers carry the "read more" links. Baseline-aligned rather than
+ * boxed, so they read as a caption line under the content above them.
+ */
+.ld-row-foot {
+	display: flex;
+	gap: 24px;
+	flex-wrap: wrap;
+	align-items: baseline;
+	margin-top: 18px;
+	font-size: 14px;
+}
+
+/* --- Architecture ----------------------------------------------------- */
+
+/*
+ * The stack, top-down. Every layer is the same shape — a header line, then its
+ * own body — so the eye can run down the left edge and read only the names.
+ * `margin: 0` on the items overrides the default theme's `.vp-doc li + li`.
+ */
+.ld-arch {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.ld-arch-layer {
+	margin: 0;
 	border: 1px solid var(--ld-line);
-	border-radius: 12px;
 	background: var(--ld-surface);
-	overflow: hidden;
-	box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.28);
+	padding: 16px 18px 18px;
 }
 
-.dark .ld-panel {
-	box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.9);
+/* The connector sits between layers rather than inside one, matching the
+   arrow idiom used by the entry-point tabs above. */
+.ld-arch-layer:not(:last-child)::after {
+	content: '\2193';
+	display: block;
+	text-align: center;
+	font-family: 'IBM Plex Mono', monospace;
+	font-size: 13px;
+	color: var(--ld-body);
+	/* Cancel the layer's own padding so the glyph lands in the gap. */
+	margin: 18px -18px -18px;
+	padding: 8px 0;
 }
 
-.ld-panel-bar {
+.ld-arch-head {
 	display: flex;
 	align-items: center;
+	gap: 12px;
+	margin-bottom: 14px;
+}
+
+.ld-arch-name {
+	font-family: 'IBM Plex Mono', monospace;
+	font-size: 11.5px;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--ld-text);
+	white-space: nowrap;
+}
+
+.ld-arch-rule {
+	flex: 1;
+	height: 1px;
+	background: var(--ld-line);
+}
+
+.ld-arch-note {
+	font-size: 12px;
+	color: var(--ld-dim);
+	text-align: right;
+}
+
+/* --- Architecture cards ----------------------------------------------- */
+
+.ld-arch-cards {
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
 	gap: 8px;
-	padding: 11px 14px;
-	border-bottom: 1px solid var(--ld-line);
+	margin: 0;
+	padding: 0;
+}
+
+.ld-arch-card {
+	flex: 1 1 170px;
+	min-width: 0;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	padding: 12px 14px;
+	border: 1px solid var(--ld-line-soft);
 	background: var(--ld-surface-2);
 }
 
-.ld-panel-bar-split {
+/* Wider basis where the card carries a paragraph and a row of calls. */
+.ld-arch-cards-wide .ld-arch-card {
+	flex-basis: 300px;
+	gap: 10px;
+}
+
+.ld-arch-cards-tight .ld-arch-card {
+	flex-basis: 100px;
+	padding: 10px 12px;
+}
+
+/* The serializer pair stacks so it reads as one column facing the panel. In a
+   column container the cards' `flex-basis` would size their height, so reset
+   it and let each one be as tall as its own two lines. */
+.ld-arch-cards-stack {
+	flex: 0 1 190px;
+	flex-direction: column;
+}
+
+.ld-arch-cards-stack .ld-arch-card {
+	flex: 0 0 auto;
+}
+
+/*
+ * The annotation script tag is the automatic path rather than a third API, so
+ * it is marked out with the accent and a dashed edge instead of a plain rule.
+ */
+.ld-arch-card.is-auto {
+	border-style: dashed;
+	border-color: var(--ld-acc);
+	background: var(--ld-acc-glow);
+}
+
+.ld-arch-card.is-auto .ld-arch-term {
+	color: var(--ld-acc-text);
+}
+
+.ld-arch-card-head {
+	display: flex;
+	align-items: baseline;
 	justify-content: space-between;
-	padding: 12px 18px;
+	gap: 10px;
 }
 
-.ld-dot {
-	width: 9px;
-	height: 9px;
-	border-radius: 50%;
-	background: var(--ld-line);
-	display: block;
-}
-
-.ld-panel-name {
+.ld-arch-term {
 	font-family: 'IBM Plex Mono', monospace;
-	font-size: 12px;
-	color: var(--ld-mute);
-	margin-left: 8px;
+	font-size: 12.5px;
+	color: var(--ld-text);
 }
 
-.ld-panel-bar-split .ld-panel-name {
-	margin-left: 0;
+.ld-arch-text {
+	font-size: 12.5px;
+	line-height: 1.5;
+	color: var(--ld-body);
+	text-wrap: pretty;
+}
+
+.ld-arch-key {
+	font-family: 'IBM Plex Mono', monospace;
+	font-size: 10.5px;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
 	color: var(--ld-dim);
+	white-space: nowrap;
+}
+
+/* --- Architecture chips and callouts ---------------------------------- */
+
+.ld-arch-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.ld-arch-chip {
+	font-family: 'IBM Plex Mono', monospace;
+	font-size: 11.5px;
+	padding: 4px 9px;
+	border: 1px solid var(--ld-line);
+	background: var(--ld-surface-3);
+	color: var(--ld-body);
+	white-space: nowrap;
+}
+
+.ld-arch-chip.is-acc {
+	border-color: var(--ld-acc);
+	color: var(--ld-acc-text);
+	background: var(--ld-acc-glow);
+}
+
+/*
+ * The one line that matters in its layer — the loadAsync signature, and the
+ * canvas the compiled pipeline draws into. Tinted rather than boxed harder, so
+ * it lifts off the cards without adding a third border weight.
+ */
+.ld-arch-call {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin-top: 10px;
+	padding: 14px;
+	border: 1px solid var(--ld-line);
+	background: var(--ld-acc-glow);
+}
+
+.ld-arch-call-main {
+	flex: 1 1 240px;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.ld-arch-sig {
+	font-family: 'IBM Plex Mono', monospace;
+	font-size: 13.5px;
+	color: var(--ld-text);
+}
+
+.ld-arch-returns {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+/* Dashes rather than a solid rule: a wire from the canvas to the backends. */
+.ld-arch-wire {
+	flex: 1 1 60px;
+	min-width: 30px;
+	height: 1px;
+	background: repeating-linear-gradient(
+		90deg,
+		var(--ld-line) 0 6px,
+		transparent 6px 12px
+	);
+}
+
+.ld-arch-foot {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin-top: 12px;
+	padding-top: 12px;
+	border-top: 1px solid var(--ld-line-soft);
+}
+
+.ld-arch-then {
+	font-size: 12.5px;
+	color: var(--ld-dim);
+}
+
+/* --- Marshal row ------------------------------------------------------ */
+
+.ld-arch-marshal {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: 10px;
+}
+
+.ld-arch-swap {
+	align-self: center;
+	font-family: 'IBM Plex Mono', monospace;
+	font-size: 18px;
+	color: var(--ld-acc-text);
+}
+
+.ld-arch-panel {
+	flex: 1 1 360px;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 14px;
+	border: 1px solid var(--ld-line-soft);
+	background: var(--ld-surface-2);
+}
+
+/* The panel already sits on surface-2; step its own cards back to the page
+   surface so the nesting stays legible in both themes. */
+.ld-arch-panel .ld-arch-card {
+	background: var(--ld-surface);
+}
+
+/* Below the two-column breakpoint the layers are already one card wide, so the
+   marshal row runs vertically and the swap glyph turns to match. */
+@media (max-width: 619px) {
+	.ld-arch-layer {
+		padding: 14px;
+	}
+
+	.ld-arch-layer:not(:last-child)::after {
+		margin: 14px -14px -14px;
+	}
+
+	.ld-arch-head {
+		flex-wrap: wrap;
+	}
+
+	.ld-arch-rule {
+		display: none;
+	}
+
+	.ld-arch-note {
+		text-align: left;
+	}
+
+	/* Full-width rows so the glyph lands between the pair and the panel it
+	   points at, rather than stranded beside the pair. */
+	.ld-arch-cards-stack,
+	.ld-arch-panel {
+		flex: 1 1 100%;
+	}
+
+	.ld-arch-swap {
+		width: 100%;
+		text-align: center;
+		transform: rotate(90deg);
+	}
+}
+
+/* --- Get it ----------------------------------------------------------- */
+
+.ld-tabs {
+	display: flex;
+	gap: 26px;
+	flex-wrap: wrap;
+	border-bottom: 1px solid var(--ld-line);
+	margin-bottom: 20px;
+}
+
+.ld-tab {
+	font-family: 'IBM Plex Mono', monospace;
+	font-size: 13px;
+	padding: 0 0 10px;
+	margin-bottom: -1px;
+	border: 0;
+	border-bottom: 2px solid transparent;
+	background: transparent;
+	color: var(--ld-body);
+	cursor: pointer;
+	transition: color 0.15s, border-color 0.15s;
+}
+
+.ld-tab:hover {
+	color: var(--ld-text);
+}
+
+.ld-tab.is-active {
+	color: var(--ld-text);
+	border-bottom-color: var(--ld-acc);
+}
+
+/*
+ * The install line is the answer to "Get it"; the snippet below is what you
+ * write afterwards. An accent rule rather than a full box keeps the two from
+ * reading as two code blocks stacked on each other.
+ */
+.ld-install {
+	font-family: 'IBM Plex Mono', monospace;
+	font-size: 12.5px;
+	line-height: 1.6;
+	color: var(--ld-acc-text);
+	border-left: 2px solid var(--ld-acc);
+	padding: 4px 0 4px 14px;
+	margin-bottom: 20px;
+	overflow-wrap: break-word;
 }
 
 /*
  * `.ld-code` is the scroll box; the <pre>/<code> inside come from Shiki
- * (snippets.data.js) and only need to inherit the panel's type. Token colours
+ * (snippets.data.mjs) and only need to inherit the block's type. Token colours
  * ride on --shiki-light / --shiki-dark, resolved by the default theme's
  * `.vp-code` rules — hence the extra `vp-code` class in the template.
  */
 .ld-code {
 	margin: 0;
-	padding: 24px 26px;
+	padding: 20px 22px;
+	border: 1px solid var(--ld-line);
+	background: var(--ld-surface-2);
 	font-family: 'IBM Plex Mono', monospace;
-	font-size: clamp(11.5px, 1.05vw, 13.5px);
-	line-height: 1.85;
+	font-size: clamp(11.5px, 1vw, 13px);
+	line-height: 1.8;
 	color: var(--ld-text);
 	overflow-x: auto;
-	background: transparent;
 }
 
 .ld-code :deep(pre),
@@ -730,345 +977,156 @@ const latestRelease = computed(
 	color: inherit;
 }
 
-.ld-code-tall {
-	padding: 26px;
-	min-height: 330px;
-}
-
-.ld-panel-foot {
-	border-top: 1px solid var(--ld-line);
-	padding: 12px 18px;
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	font-family: 'IBM Plex Mono', monospace;
-	font-size: 12px;
-	color: var(--ld-mute);
-}
-
-.ld-panel-foot-links {
-	padding: 14px 18px;
-	gap: 18px;
-	flex-wrap: wrap;
-	font-family: inherit;
-	font-size: 13.5px;
-}
-
-.ld-pip {
-	width: 6px;
-	height: 6px;
-	border-radius: 50%;
-	background: var(--ld-acc);
-	display: block;
-	flex: none;
-}
-
-/* --- Cards / steps ---------------------------------------------------- */
-
-.ld-card {
-	border: 1px solid var(--ld-line);
-	border-radius: 12px;
-	background: var(--ld-surface);
-	transition: background-color 0.2s, border-color 0.2s;
-}
+/* --- Screenshots ------------------------------------------------------ */
 
 /*
- * “How it works” sits under the tab list and re-renders per entry point, so it
- * has to stay compact enough not to outgrow the code panel beside it — a plain
- * two-up list rather than the bordered cards the standalone section used.
+ * Only rendered where the browser lacks JSPI, so it is the one element on the
+ * page allowed to break the restrained palette — every tile below it is inert.
  */
-.ld-flow {
-	margin-top: 40px;
-	border-top: 1px solid var(--ld-line);
-	padding-top: 26px;
-}
-
-.ld-flow-head {
-	margin-bottom: 22px;
-}
-
-/*
- * Fixed 2x2 rather than auto-fit: there are always exactly four steps, and
- * auto-fit lands on a ragged 3+1 at common widths. Two columns also leaves each
- * track wide enough for the longest command to sit on one line.
- */
-.ld-flow-list {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-	display: grid;
-	grid-template-columns: 1fr;
-	gap: 26px 22px;
-}
-
-@media (min-width: 640px) {
-	.ld-flow-list {
-		grid-template-columns: 1fr 1fr;
-	}
-}
-
-.ld-step-num {
-	font-family: 'IBM Plex Mono', monospace;
-	font-size: 11px;
-	color: var(--ld-acc-text);
-	letter-spacing: 0.12em;
-	margin-bottom: 10px;
-}
-
-.ld-step-title {
-	font-size: 15px;
-	font-weight: 600;
-	color: var(--ld-text);
-	margin-bottom: 6px;
-}
-
-.ld-step-body {
-	font-size: 13.5px;
+.ld-warn {
+	color: var(--ld-warn-text);
+	background: var(--ld-warn-bg);
+	border: 1px solid var(--ld-warn-line);
+	border-left-width: 3px;
+	padding: 12px 16px;
+	margin: 0 0 20px;
+	font-size: 14px;
 	line-height: 1.6;
-	color: var(--ld-dim);
-	margin-bottom: 12px;
+	max-width: 68ch;
 	text-wrap: pretty;
 }
 
+/* --- Screenshot grid -------------------------------------------------- */
+
 /*
- * Commands wrap rather than scroll — a scrollbar inside a 2cm-wide chip is
- * unusable. `break-word` only splits a token when it genuinely cannot fit, so
- * short commands still sit on one line.
+ * Flush 2px gutters, uniform 3:2 crops, captions outside the image. Two of the
+ * source screenshots are off-grid (simple-app, text-ts) but neither is in the
+ * featured three, so `cover` never has much to trim here.
  */
-.ld-chip-code {
+.ld-shots {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 16px;
+}
+
+@media (min-width: 620px) {
+	.ld-shots {
+		grid-template-columns: repeat(3, 1fr);
+		gap: 2px;
+	}
+}
+
+.ld-shot {
+	margin: 0;
+	min-width: 0;
+}
+
+.ld-shot-frame {
+	display: block;
+	background: var(--ld-surface-2);
+	border: 1px solid var(--ld-line);
+}
+
+a.ld-shot-frame:hover {
+	border-color: var(--ld-acc);
+}
+
+.ld-shot-frame img {
+	display: block;
+	width: 100%;
+	aspect-ratio: 3 / 2;
+	object-fit: cover;
+}
+
+.ld-shot-cap {
 	font-family: 'IBM Plex Mono', monospace;
 	font-size: 11.5px;
 	line-height: 1.5;
-	color: var(--ld-acc-text);
-	background: var(--ld-surface-3);
-	border: 1px solid var(--ld-line);
-	border-radius: 5px;
-	padding: 7px 9px;
-	white-space: normal;
-	overflow-wrap: break-word;
-}
-
-/* --- Split layout / tabs ---------------------------------------------- */
-
-.ld-split {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-	gap: clamp(32px, 4vw, 56px);
-	align-items: start;
-}
-
-.ld-tabs {
+	padding-top: 8px;
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
 }
 
-.ld-tab {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	width: 100%;
-	text-align: left;
-	padding: 14px 16px;
-	border-radius: 8px;
-	cursor: pointer;
-	font-family: inherit;
-	border: 1px solid transparent;
-	background: transparent;
+.ld-shot-title {
+	color: var(--ld-text);
+}
+
+.ld-shot-body {
 	color: var(--ld-body);
-	transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+	text-wrap: pretty;
 }
 
-.ld-tab:hover {
-	background: var(--ld-surface-2);
-}
+/* --- Status ----------------------------------------------------------- */
 
-.ld-tab.is-active {
-	border-color: var(--ld-acc);
-	background: var(--ld-surface-2);
-	color: var(--ld-text);
-}
-
-.ld-tab-label {
-	font-size: 15px;
-	font-weight: 500;
-}
-
-.ld-tab-hint {
-	font-size: 13px;
-	color: var(--ld-mute);
-	margin-left: auto;
-}
-
-/* --- Demos ------------------------------------------------------------ */
-
-.ld-head-row {
-	display: flex;
-	align-items: flex-end;
-	justify-content: space-between;
-	gap: 24px;
-	flex-wrap: wrap;
-	margin-bottom: 40px;
-}
-
-.ld-demos {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-	gap: 20px;
-}
-
-.ld-demo {
-	overflow: hidden;
-}
-
-.ld-demo:hover {
-	border-color: var(--ld-acc);
-}
-
-.ld-demo-frame {
-	height: 230px;
-	background: var(--ld-surface-2);
-}
-
-.ld-demo-frame img {
-	display: block;
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-}
-
-.ld-demo-link {
-	display: block;
-}
-
-.landing :deep(.ld-demo-link),
-.landing :deep(.ld-demo-link:hover) {
-	color: inherit;
-}
-
-.ld-demo-meta {
-	padding: 18px 20px;
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	border-top: 1px solid var(--ld-line);
-}
-
-.ld-demo-text {
-	flex: 1;
-}
-
-.ld-demo-title {
-	font-size: 15.5px;
-	font-weight: 500;
-	color: var(--ld-text);
-}
-
-.ld-demo-body {
-	font-size: 13px;
-	color: var(--ld-dim);
-	margin-top: 4px;
-}
-
-.ld-badge {
-	font-family: 'IBM Plex Mono', monospace;
-	font-size: 11px;
-	color: var(--ld-mute);
-	border: 1px solid var(--ld-line);
-	border-radius: 4px;
-	padding: 4px 8px;
-	white-space: nowrap;
-}
-
-.landing :deep(a.ld-badge-accent),
-.ld-badge-accent {
-	color: var(--ld-acc-text);
-	border-color: var(--ld-acc);
-}
-
-.ld-badge-shipped {
-	color: var(--ld-acc-text);
-	border-color: var(--ld-acc);
-}
-
-.ld-badge-planned {
-	color: var(--ld-mute);
-}
-
-/* --- News / roadmap --------------------------------------------------- */
-
-.ld-rule-item {
-	border-top: 1px solid var(--ld-line);
-	padding: 20px 0;
-}
-
-.ld-rule-foot {
-	border-top: 1px solid var(--ld-line);
-	padding-top: 20px;
+.ld-status {
+	margin: 0;
 	font-size: 14px;
 }
 
-.ld-news-date {
+/*
+ * Three columns: version, state, detail. The first two are fixed-width mono so
+ * the eye can run straight down them; the detail column takes the slack.
+ */
+.ld-status-row {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 2px 16px;
+	padding: 12px 0;
+	border-top: 1px solid var(--ld-line-soft);
+}
+
+.ld-status-row:first-child {
+	border-top: 0;
+	padding-top: 0;
+}
+
+@media (min-width: 620px) {
+	.ld-status-row {
+		grid-template-columns: 15ch 9ch minmax(0, 1fr);
+		align-items: baseline;
+	}
+}
+
+.ld-status-key,
+.ld-status-state {
 	font-family: 'IBM Plex Mono', monospace;
-	font-size: 12px;
-	color: var(--ld-mute);
-	margin-bottom: 8px;
+	font-size: 12.5px;
+	margin: 0;
 }
 
-.ld-news-title {
-	font-size: 16px;
-	font-weight: 500;
+.ld-status-key {
 	color: var(--ld-text);
-	margin-bottom: 8px;
 }
 
-.ld-roadmap-item {
-	display: flex;
-	gap: 16px;
-	align-items: baseline;
-	padding: 18px 0;
+.ld-status-shipped {
+	color: var(--ld-acc-text);
 }
 
-.ld-roadmap-title {
-	font-size: 15px;
-	color: var(--ld-text);
-	margin-bottom: 4px;
+.ld-status-planned {
+	color: var(--ld-body);
 }
 
-.ld-roadmap-body {
-	font-size: 13.5px;
+.ld-status-detail {
+	margin: 0;
 	color: var(--ld-dim);
 	line-height: 1.55;
+	text-wrap: pretty;
 }
 
 /* --- Footer ----------------------------------------------------------- */
 
 .ld-footer {
-	border-top: 1px solid var(--ld-line-soft);
-	background: var(--ld-surface-2);
-	padding: 48px 0;
+	border-top: 1px solid var(--ld-line);
+	padding: 26px 0 40px;
 }
 
 .ld-footer-row {
 	display: flex;
-	gap: 28px;
+	gap: 20px 28px;
 	flex-wrap: wrap;
-	align-items: center;
-}
-
-.ld-footer-mark {
-	display: inline-flex;
-	align-items: center;
-	background: #f4f9f8;
-	border-radius: 6px;
-	padding: 6px 10px;
-}
-
-.ld-footer-mark img {
-	height: 18px;
-	width: auto;
-	object-fit: contain;
-	display: block;
+	align-items: baseline;
+	justify-content: space-between;
 }
 
 .ld-footer-links {
@@ -1086,12 +1144,9 @@ const latestRelease = computed(
 	color: var(--ld-acc-text);
 }
 
-.ld-footer-spacer {
-	flex: 1;
-}
-
 .ld-footer-note {
-	font-size: 13px;
-	color: var(--ld-mute);
+	font-family: 'IBM Plex Mono', monospace;
+	font-size: 12px;
+	color: var(--ld-body);
 }
 </style>

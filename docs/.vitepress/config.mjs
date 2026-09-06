@@ -105,15 +105,18 @@ export default withMermaid(defineConfig({
       // https://vitepress.dev/reference/default-theme-config
       logo: "/logo.svg",
       siteTitle: false,
+      // The landing page is a spec sheet (theme/components/Landing.vue): it
+      // links out rather than hosting the demo gallery or the release history,
+      // so both need a nav home of their own.
       nav: [
-        { text: "Home", link: "/" },
-        { text: "News", link: "/news" },
-        { text: "API", link: "/api/" },
         { text: "Guides", link: "/guide/" },
+        { text: "API", link: "/api/" },
+        { text: "Demos", link: "/demos" },
         {
-          text: "Roadmap",
+          text: "Releases",
           items: [
-            { text: "Overview", link: "/roadmap/" },
+            { text: "Latest news", link: "/news" },
+            { text: "Roadmap", link: "/roadmap/" },
             { text: "Module Availability", link: "/roadmap/modules" },
           ],
         },
@@ -126,7 +129,7 @@ export default withMermaid(defineConfig({
             // { text: 'Discussions', link: 'https://discourse.paraview.org/c/in-situ-support' },
             {
               text: "Issue Tracker",
-              link: "https://gitlab.kitware.com/groups/vtk/-/issues",
+              link: "https://github.com/Kitware/vtk-wasm/issues",
             },
             { text: "Webinars", link: "https://www.kitware.com/webinars/" },
             { text: "Services", link: "https://www.kitware.com/support" },

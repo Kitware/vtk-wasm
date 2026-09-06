@@ -10,12 +10,17 @@
             "status": "planned",
             "version": "na"
           }
-        },
+        }
+      ]
+    },
+    "implemented-in-9.7.YYYYMMDD.dev0": {
+      "description": "Features available in weekly dev releases",
+      "features": [
         {
           "type-hints": {
             "description": "Type hints (*.d.ts files)",
-            "status": "planned",
-            "version": "na"
+            "status": "implemented",
+            "version": "9.7.20260816.dev0"
           }
         }
       ]
@@ -47,6 +52,13 @@
         {
           "special-html-targets": {
             "description": "Export specialHTMLTargets, so a canvas without an id can be bound to VTK",
+            "status": "implemented",
+            "version": "9.7.0"
+          }
+        },
+        {
+          "support-generic-render-window-interactor": {
+            "description": "Support vtkGenericRenderWindowInteractor",
             "status": "implemented",
             "version": "9.7.0"
           }

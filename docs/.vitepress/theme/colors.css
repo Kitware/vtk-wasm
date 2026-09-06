@@ -42,7 +42,13 @@
     --ld-text: #0d1a17;
     --ld-body: #4b5a56;
     --ld-dim: #56655f;
-    --ld-mute: #6d7c78;
+
+    /* Warning: the JSPI notice on the demo tiles (theme/useJspi.mjs). Amber
+       rather than the blue accent so it reads as a caveat, not a link. Text on
+       fill is 6.7:1 here and 10.7:1 in the dark theme below. */
+    --ld-warn-text: #7a4f00;
+    --ld-warn-bg: #fff8e6;
+    --ld-warn-line: #e3c274;
 }
 
 .dark {
@@ -60,9 +66,12 @@
     --ld-line: #1c242a;
     --ld-line-soft: #151b20;
     --ld-text: #f4f9f8;
-    --ld-body: #9fadaa;
+    --ld-body: #e1ebe9;
     --ld-dim: #8b9895;
-    --ld-mute: #6d7c79;
+
+    --ld-warn-text: #f0c674;
+    --ld-warn-bg: rgba(240, 198, 116, 0.08);
+    --ld-warn-line: rgba(240, 198, 116, 0.34);
 
     /* Default-theme surfaces: nav bar, sidebar, doc pages, code blocks. */
     --vp-c-bg: var(--ld-bg);
@@ -79,7 +88,7 @@
 
     --vp-c-text-1: var(--ld-text);
     --vp-c-text-2: var(--ld-body);
-    --vp-c-text-3: var(--ld-mute);
+    --vp-c-text-3: var(--ld-body);
 }
 
 /* ---------------------------------------------------------------------------
