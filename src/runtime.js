@@ -56,9 +56,14 @@ function exposeSpecialHTMLTargets(buffer) {
 async function importModuleFactoryAsync(moduleURL) {
   let namespace;
   try {
-    // @vite-ignore keeps this a true runtime dynamic import (the URL is a
-    // variable / blob URL that Vite must not try to statically resolve).
-    namespace = await import(/* @vite-ignore */ moduleURL);
+    // Keep this a true runtime dynamic import: the URL is a variable / blob URL
+    // that a bundler must not try to statically resolve. Each bundler has its
+    // own pragma, and they do not recognise each other's -- webpack and
+    // Turbopack rewrite the import into a thrown MODULE_NOT_FOUND when only
+    // @vite-ignore is present, so the glue module is never requested at all.
+    namespace = await import(
+      /* @vite-ignore */ /* webpackIgnore: true */ /* turbopackIgnore: true */ moduleURL
+    );
   } catch (cause) {
     throw new Error(
       [
