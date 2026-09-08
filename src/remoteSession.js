@@ -27,6 +27,15 @@ export class RemoteSession {
     this._pendingUpdates = new Map(); // vtkId -> queued-but-not-started run (coalescing)
     this.currentMTime = 1;
     this.stateMTimes = {};
+    // ids whose fetched state carried "vtk-object-manager-kept-alive". The
+    // deserializer only applies fetched states to subtrees rooted in a state
+    // with that marker, but any local serialization (e.g. `get` on a live
+    // object) rebuilds the stored state WITHOUT it (see
+    // https://gitlab.kitware.com/vtk/vtk/-/work_items/20099). Remember which
+    // ids the server flagged so updateAsync can re-stamp them before applying
+    // states; otherwise one `get` on an object referencing a render window
+    // silently detaches that window from all future server updates.
+    this.keptAliveStateIds = new Set();
     this.hashesMTime = {};
     this.pendingArrays = {};
     this.networkFetchState = null;
@@ -211,6 +220,9 @@ export class RemoteSession {
     const state = serverState ? JSON.parse(serverState) : null;
     if (state) {
       this.stateMTimes[state.Id] = state.MTime;
+      if (state["vtk-object-manager-kept-alive"]) {
+        this.keptAliveStateIds.add(Number(state.Id));
+      }
     } else {
       delete this.stateMTimes[vtkId];
     }
@@ -243,6 +255,9 @@ export class RemoteSession {
       const state = states[i];
       if (state) {
         this.stateMTimes[state.Id] = state.MTime;
+        if (state["vtk-object-manager-kept-alive"]) {
+          this.keptAliveStateIds.add(Number(state.Id));
+        }
         results.push(state);
       } else {
         delete this.stateMTimes[stateIds[i]];
@@ -364,9 +379,10 @@ export class RemoteSession {
       serverStatus.cameras.forEach((v) => this.cameraIds.add(Number(v)));
 
       // Remove state that should be ignored
-      serverStatus.ignore_ids.forEach((vtkId) =>
-        this.#native.unRegisterState(vtkId),
-      );
+      serverStatus.ignore_ids.forEach((vtkId) => {
+        this.#native.unRegisterState(vtkId);
+        this.keptAliveStateIds.delete(Number(vtkId));
+      });
 
       // Ensure completion of all network calls
       await Promise.all(pendingWork.hashes);
@@ -382,6 +398,22 @@ export class RemoteSession {
           this.#native.registerState(state);
         }
       }
+
+      // Re-assert the ownership markers before applying states: registerState
+      // merges partial states into stored ones, so this restores root status
+      // that a local serialization stripped since the last update (see the
+      // keptAliveStateIds comment in the constructor). Restrict to ids in this
+      // update's dependency report — other render windows' roots are not
+      // listed here and must not be touched from this call.
+      const reportedIds = new Set(serverStatus.ids.map(([id]) => Number(id)));
+      this.keptAliveStateIds.forEach((id) => {
+        if (reportedIds.has(id)) {
+          this.#native.registerState({
+            Id: id,
+            "vtk-object-manager-kept-alive": true,
+          });
+        }
+      });
 
       // Bump local mtime and process states to reflect server state
       if (needUpdate) {
