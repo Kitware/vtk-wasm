@@ -1,4 +1,4 @@
-import { loadAsync } from "@kitware/vtk-wasm";
+import { loadAsync, vtkInteractorObserver } from "@kitware/vtk-wasm";
 
 const BUNDLE_URL =
   "https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz";
@@ -65,13 +65,13 @@ async function main(): Promise<void> {
     renderWindow: window_,
     canvasSelector: CANVAS_SELECTOR,
   });
+  interactor.setInteractorStyle(null as unknown as vtkInteractorObserver);
   console.log("Adding observer");
   interactor.$observe("KeyPressEvent", (sender: number, eventName: string) => {
     const vtkKeyCode = interactor.getKeyCode();
     const vtkKeySym = interactor.getKeySym();
     updateVtkRow(String(vtkKeyCode), String(vtkKeySym));
   });
-  console.log("Added observer");
   await window_.render();
   interactor.start();
   canvas.focus();
