@@ -60,6 +60,12 @@ export const demos = [
 		image: '/demo-screenshots/simple-app.png',
 	},
 	{
+		href: '/demo/key-symbols-ts/index.html',
+		title: 'Keycode reference',
+		body: 'Quick lookup for KeySym, KeyCode and Key',
+		image: '/demo-screenshots/key-symbols-ts.png',
+	},
+	{
 		href: '/demo/text-ts/index.html',
 		title: 'Text actor',
 		body: 'Screen-space text drawn over a 3D scene',

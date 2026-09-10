@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VTK.wasm keycode reference</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #05070f;
+        color: #e8eef8;
+        font:
+          14px/1.45 system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+      }
+      #app {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+      }
+      #app > canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        outline: none;
+      }
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 48px 24px;
+        pointer-events: none;
+      }
+      .overlay-title {
+        margin: 0;
+        font-size: 32px;
+        font-weight: 800;
+        text-align: center;
+      }
+      .overlay-subtitle {
+        margin: 8px 0 32px;
+        font-size: 15px;
+        color: #8b95a8;
+        text-align: center;
+      }
+      .overlay-panel {
+        width: min(1240px, 100%);
+        flex: 1;
+        border: 1px solid #232a3a;
+        border-radius: 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 40px 24px;
+        gap: 8px;
+      }
+      .icon-circle {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: #1b2130;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        margin-bottom: 8px;
+      }
+      .status {
+        font-size: 24px;
+        font-weight: 700;
+      }
+      .status-sub {
+        font-size: 14px;
+        color: #8b95a8;
+        margin-bottom: 8px;
+      }
+      .idle-icon {
+        font-size: 40px;
+        opacity: 0.35;
+        margin-top: 24px;
+      }
+      .key-box {
+        margin-top: 16px;
+        min-width: 96px;
+        min-height: 96px;
+        border: 1px solid #232a3a;
+        border-radius: 12px;
+        background: #1b2130;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        font-weight: 800;
+        padding: 0 16px;
+      }
+      .key-grid {
+        margin-top: 24px;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(140px, 1fr));
+        gap: 16px;
+        width: 100%;
+      }
+      #vtk-grid {
+        grid-template-columns: repeat(2, minmax(140px, 1fr));
+      }
+      .key-card {
+        background: #10131c;
+        border: 1px solid #232a3a;
+        border-radius: 10px;
+        padding: 16px;
+        text-align: center;
+      }
+      .key-label {
+        font-size: 12px;
+        color: #8b95a8;
+        margin-bottom: 6px;
+      }
+      .key-value {
+        font-size: 20px;
+        font-weight: 800;
+      }
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <canvas tabindex="0"></canvas>
+      <div class="overlay">
+        <h1 class="overlay-title">VTK.wasm KeyCode Reference</h1>
+        <p class="overlay-subtitle">
+          Quick lookup for JavaScript to VTK.wasm key mapping
+        </p>
+        <div class="overlay-panel">
+          <div class="icon-circle">⌨️</div>
+          <div class="status" id="status-title">Press Any Key</div>
+          <div class="status-sub" id="status-sub">
+            Start typing to see key codes
+          </div>
+          <div class="idle-icon" id="idle-icon">⌨️</div>
+          <div class="key-box" id="key-box" hidden></div>
+          <div class="key-grid" id="key-grid" hidden>
+            <div class="key-card">
+              <div class="key-label">event.key</div>
+              <div class="key-value" id="val-key"></div>
+            </div>
+            <div class="key-card">
+              <div class="key-label">event.code</div>
+              <div class="key-value" id="val-code"></div>
+            </div>
+            <div class="key-card">
+              <div class="key-label">event.keyCode</div>
+              <div class="key-value" id="val-keycode"></div>
+            </div>
+            <div class="key-card">
+              <div class="key-label">event.which</div>
+              <div class="key-value" id="val-which"></div>
+            </div>
+          </div>
+          <div class="key-grid" id="vtk-grid" hidden>
+            <div class="key-card">
+              <div class="key-label">vtk.KeyCode</div>
+              <div class="key-value" id="val-vtk-keycode"></div>
+            </div>
+            <div class="key-card">
+              <div class="key-label">vtk.KeySym</div>
+              <div class="key-value" id="val-vtk-keysym"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
