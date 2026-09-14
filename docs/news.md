@@ -12,6 +12,97 @@ The WASM bundle is available here:
 1. [vtk-9.7.20260913-wasm32-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/7800/download)
 2. [vtk-9.7.20260913-wasm64-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/7799/download)
 
+## Enable serdes for classes in the ComputationalGeometry and CommonDataModel modules
+
+__September 11, 2026__
+
+Enabled serdes for classes in CommonComputationalGeometry:
+
+1. vtkCardinalSpline
+2. vtkKochanekSpline
+3. vtkParametricBohemianDome
+4. vtkParametricBour
+5. vtkParametricBoy
+6. vtkParametricCatalanMinimal
+7. vtkParametricConicSpiral
+8. vtkParametricCrossCap
+9. vtkParametricDini
+10. vtkParametricEllipsoid
+11. vtkParametricEnneper
+12. vtkParametricFigure8Klein
+13. vtkParametricFunction
+14. vtkParametricHenneberg
+15. vtkParametricKlein
+16. vtkParametricKuen
+17. vtkParametricMobius
+18. vtkParametricPluckerConoid
+19. vtkParametricPseudosphere
+20. vtkParametricRandomHills
+21. vtkParametricRoman
+22. vtkParametricSpline
+23. vtkParametricSuperEllipsoid
+24. vtkParametricSuperToroid
+25. vtkParametricTorus
+
+and from CommonDataModel:
+
+1. vtkSpline
+
+## Fix rendering of thick lines in vtkGlyph3DMapper under webgl2 backend
+
+__September 10, 2026__
+
+The vtkGlyph3DMapper now features improved rendering of lines >1px in the webgl2 backend.
+See [vtk/vtk!13672](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13672) for details.
+
+## Enable serdes for few interesting classes in RenderingCore and RenderingImage modules
+
+__September 08, 2026__
+
+Enabled serialization in VTK::RenderingCore for:
+
+1. vtkAssembly
+2. vtkAssemblyPaths
+3. vtkAvatar
+4. vtkBackgroundColorMonitor
+5. vtkBillboardTextActor3D
+6. vtkCameraActor
+7. vtkDistanceToCamera
+8. vtkFlagPoleLabel
+9. vtkGraphToGlyphs
+10. vtkInteractorEventRecorder
+11. vtkLightKit
+12. vtkLODProp3D
+13. vtkLookupTableWithEnabling
+14. vtkMapArrayValues
+15. vtkObserverMediator
+16. vtkPickingManager
+17. vtkPropAssembly
+18. vtkRendererSource
+19. vtkRenderWindowCollection
+20. vtkResizingWindowToImageFilter
+21. vtkScenePicker
+22. vtkSelectVisiblePoints
+23. vtkStereoCompositor
+24. vtkTextMapper
+25. vtkTransformCoordinateSystems
+26. vtkWindowLevelLookupTable
+27. vtkWindowToImageFilter
+
+and, enabled serialization in VTK::RenderingImage for:
+
+1. vtkDepthImageToPointCloud
+
+See [vtk/vtk!13668](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13668) for details.
+
+## Fix deserialization of composite data display attributes
+
+__September 08, 2026__
+
+The deserialization of vtkCompositeDataDisplayAttributes class now works as expected. Previously,
+state changes in the per-block display attribtues like block visibility were not applied correctly.
+See [vtk/vtk!13653](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13653) for details.
+
 ## 9.7.20260906 is now available!
 
 __September 06, 2026__
@@ -25,6 +116,13 @@ pip install "vtk==9.7.20260906.dev0" --extra-index-url https://wheels.vtk.org
 The WASM bundle is available here:
 1. [vtk-9.7.20260906-wasm32-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/7756/download)
 2. [vtk-9.7.20260906-wasm64-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/7759/download)
+
+## Fix clipping planes in the glyph mapper under webgl2 backend
+
+__September 03, 2026__
+
+The vtkGlyph3DMapper now uses clipping planes correctly under webgl2 backend.
+See [vtk/vtk!13630](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13630) for details.
 
 ## 9.7.20260830 is now available!
 
