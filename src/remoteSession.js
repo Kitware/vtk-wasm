@@ -12,6 +12,8 @@ export class RemoteSession {
   #vtkProxyCache = null;
   #idToRef = null;
   #typedArrayInterface = null;
+  #activeInteractorPumps = new Set();
+  #interactorIds = new Map();
 
   /**
    * @param {object} native - the C++ vtkRemoteSession instance.
@@ -65,6 +67,21 @@ export class RemoteSession {
       "vtkWebGPURenderWindow"
     ].forEach((name) => native.skipProperty(name, "Size"));
 
+    // The interactor flips DOM event Y coordinates against its Size. Applying
+    // the server's headless Size (commonly 300x300) after the render window has
+    // been sized to the browser canvas therefore makes every pick miss. Canvas
+    // sizing belongs to bindCanvas / setSizeAsync, just like it does above for
+    // render windows, so ignore Size on every concrete interactor variant too.
+    [
+      "vtkRenderWindowInteractor",
+      "vtkGenericRenderWindowInteractor",
+      "vtkXRenderWindowInteractor",
+      "vtkWin32RenderWindowInteractor",
+      "vtkCocoaRenderWindowInteractor",
+      "vtkAndroidRenderWindowInteractor",
+      "vtkWebAssemblyRenderWindowInteractor",
+    ].forEach((name) => native.skipProperty(name, "Size"));
+
     // The embedder owns canvas sizing (bindCanvas / setSizeAsync), so opt out of
     // VTK's interactor self-sizing, which otherwise couples multiple views on a page.
     this.#module?._setDefaultExpandVTKCanvasToContainer?.(false);
@@ -103,15 +120,51 @@ export class RemoteSession {
         this.boundRenderWindows.add(rwId);
       }
     }
-    if (this.#native.startEventLoop(renderWindowId)) {
-      this.renderWindowIdsWithRunningEventLoops.add(renderWindowId);
-      return true;
+    const started = !!this.#native.startEventLoop(renderWindowId);
+    const interactorId = this.#interactorIds.get(rwId);
+    const canPump = !started && interactorId !== undefined;
+    if (started || canPump) {
+      this.renderWindowIdsWithRunningEventLoops.add(rwId);
     }
-    return false;
+    if (canPump) {
+      this.#pumpInteractor(rwId, interactorId);
+    }
+    return started || canPump;
+  }
+
+  // Synchronous Emscripten builds have one native main loop. A second render
+  // window's startEventLoop consequently fails even though its interactor is
+  // valid. Drive that interactor from the browser's animation loop instead.
+  // The pump is one-per-window and retires itself after stopEventLoop/dispose.
+  #pumpInteractor(renderWindowId, interactorId) {
+    if (this.#activeInteractorPumps.has(renderWindowId)) {
+      return;
+    }
+    this.#activeInteractorPumps.add(renderWindowId);
+    const tick = () => {
+      if (
+        this.#disposed ||
+        !this.renderWindowIdsWithRunningEventLoops.has(renderWindowId)
+      ) {
+        this.#activeInteractorPumps.delete(renderWindowId);
+        return;
+      }
+      try {
+        // invoke is synchronous in a non-JSPI build, but accepting a Promise
+        // keeps this safe for custom builds and a transient failure must not
+        // kill all later input for the view.
+        const result = this.#native.invoke(interactorId, "ProcessEvents", []);
+        result?.catch?.(() => {});
+      } catch {
+        // Keep pumping: the next browser frame can recover.
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
   }
 
   stopEventLoop(renderWindowId) {
-    this.renderWindowIdsWithRunningEventLoops.delete(renderWindowId);
+    this.renderWindowIdsWithRunningEventLoops.delete(Number(renderWindowId));
     return this.#native.stopEventLoop(renderWindowId);
   }
 
@@ -313,6 +366,10 @@ export class RemoteSession {
       const serverStatus = await this.networkFetchStatus(vtkId);
       const hashesToFetch = [];
       const statesToFetch = [];
+
+      if (serverStatus.interactor != null) {
+        this.#interactorIds.set(Number(vtkId), Number(serverStatus.interactor));
+      }
 
       // Handle forcepush if any
       const resetIds = serverStatus.force_push || [];
@@ -560,6 +617,8 @@ export class RemoteSession {
       this.#native.stopEventLoop(id);
     });
     this.renderWindowIdsWithRunningEventLoops.clear();
+    this.#activeInteractorPumps.clear();
+    this.#interactorIds.clear();
     const specialHTMLTargets = this.#module?.specialHTMLTargets;
     this.canvasTargets.forEach(({ canvas, target }) => {
       removeCanvasEventListeners(canvas);
