@@ -130,6 +130,11 @@
         "status": "available",
         "version": "9.5.0"
       },
+      "VTK::CommonComputationalGeometry": {
+        "description": "Serialization coverage for VTK::CommonComputationalGeometry",
+        "status": "available",
+        "version": "9.7.x"
+      },
       "VTK::CommonCore": {
         "description": "Serialization coverage for VTK::CommonCore",
         "status": "available",
@@ -184,6 +189,11 @@
         "description": "Serialization coverage for VTK::InteractionWidgets",
         "status": "partially-implemented",
         "version": "9.5.0"
+      },
+      "VTK::IOXML": {
+        "description": "Serialization coverage for VTK::IOXML",
+        "status": "available",
+        "version": "9.7.x"
       },
       "VTK::RenderingAnnotation": {
         "description": "Serialization coverage for VTK::RenderingAnnotation",
@@ -263,7 +273,6 @@
     },
     "unavailable": [
       "VTK::CommonArchive",
-      "VTK::CommonComputationalGeometry",
       "VTK::CommonMisc",
       "VTK::CommonSystem",
       "VTK::DomainsChemistry",
@@ -379,7 +388,6 @@
       "VTK::IOVPIC",
       "VTK::IOVeraOut",
       "VTK::IOVideo",
-      "VTK::IOXML",
       "VTK::IOXMLParser",
       "VTK::IOXdmf2",
       "VTK::IOXdmf3",
