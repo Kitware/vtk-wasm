@@ -42,6 +42,9 @@ export default withMermaid(defineConfig({
     plugins: USE_LOCAL_WASM
       ? [useLocalWasm({ publicDir: resolve(__dirname, "../public"), base: SITE_BASE })]
       : [],
+    // Mermaid (dagre, cytoscape, per-diagram modules) ships a few chunks over
+    // Rollup's 500 kB default; raise the limit so the build stays quiet.
+    build: { chunkSizeWarningLimit: 800 },
     optimizeDeps: {
       include: [
         "fastdom",
