@@ -1,3 +1,17 @@
+## 9.7.20260920 is now available!
+
+__September 20, 2026__
+
+You can install the equivalent python wheel with the command
+
+```sh
+pip install "vtk==9.7.20260920.dev0" --extra-index-url https://wheels.vtk.org
+```
+
+The WASM bundle is available here:
+1. [vtk-9.7.20260920-wasm32-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/7834/download)
+2. [vtk-9.7.20260920-wasm64-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/7836/download)
+
 ## Support vtkLODProp3D in webgl2 backend
 
 __September 19, 2026__
