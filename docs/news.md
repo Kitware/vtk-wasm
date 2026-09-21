@@ -1,3 +1,43 @@
+## Support vtkLODProp3D in webgl2 backend
+
+__September 19, 2026__
+
+You can now use the `vtkLODProp3D` class for level-of-detail rendering with the webgl2
+backend.
+
+## Enable marshalling for IOXML readers and writers
+
+__September 19, 2026__
+
+You can now access all of the readers and writers from the VTK::IOXML module.
+These let you read `*.vtu`, `*.vtp` and many other files directly from javascript.
+
+## Enable marshalling for additional rendering, and interpolation classes.
+
+__September 19, 2026__
+
+| Class | Module |
+|---|---|
+| `vtkPiecewiseFunction` | Common/DataModel |
+| `vtkQuaternionInterpolator` | Common/Math |
+| `vtkTupleInterpolator` | Rendering/Core |
+| `vtkCameraInterpolator` | Rendering/Core |
+| `vtkTransformInterpolator` | Rendering/Core |
+| `vtkPath` | Common/DataModel |
+| `vtkStringToImage` | Rendering/Core |
+| `vtkTextRenderer` | Rendering/Core |
+| `vtkFreeTypeStringToImage` | Rendering/FreeType |
+| `vtkMathTextFreeTypeTextRenderer` | Rendering/FreeType |
+| `vtkTextRendererStringToImage` | Rendering/FreeType |
+| `vtkVectorText` | Rendering/FreeType |
+
+
+## Fix mouse up event when cursor is outside the canvas
+
+__September 16, 2026__
+
+VTK now observes for mouse up event on `window` instead of `<canvas>`.
+
 ## 9.7.20260913 is now available!
 
 __September 13, 2026__
