@@ -98,7 +98,7 @@ The WASM bundle is available here:
 
 __September 11, 2026__
 
-Enabled serdes for classes in CommonComputationalGeometry:
+You can now serialize the following classes in CommonComputationalGeometry:
 
 1. vtkCardinalSpline
 2. vtkKochanekSpline
@@ -137,11 +137,11 @@ __September 10, 2026__
 The vtkGlyph3DMapper now features improved rendering of lines >1px in the webgl2 backend.
 See [vtk/vtk!13672](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13672) for details.
 
-## Enable serdes for few interesting classes in RenderingCore and RenderingImage modules
+## Enable serdes for a selection of classes in RenderingCore and RenderingImage modules
 
 __September 08, 2026__
 
-Enabled serialization in VTK::RenderingCore for:
+You can now serialize classes in VTK::RenderingCore:
 
 1. vtkAssembly
 2. vtkAssemblyPaths
@@ -171,7 +171,7 @@ Enabled serialization in VTK::RenderingCore for:
 26. vtkWindowLevelLookupTable
 27. vtkWindowToImageFilter
 
-and, enabled serialization in VTK::RenderingImage for:
+and classes in VTK::RenderingImage:
 
 1. vtkDepthImageToPointCloud
 
@@ -181,8 +181,8 @@ See [vtk/vtk!13668](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13668) f
 
 __September 08, 2026__
 
-The deserialization of vtkCompositeDataDisplayAttributes class now works as expected. Previously,
-state changes in the per-block display attribtues like block visibility were not applied correctly.
+The deserialization of `vtkCompositeDataDisplayAttributes` now works as expected. Previously,
+state changes in per-block display attributes, such as block visibility, were not applied correctly.
 See [vtk/vtk!13653](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13653) for details.
 
 ## 9.7.20260906 is now available!
@@ -224,20 +224,20 @@ The WASM bundle is available here:
 
 __August 28, 2026__
 
-When the state contained `vtkIdTypeArray` (with 8-byte elements), and a wasm32 remote session receives it, VTK will now transform the 8-byte integer to a 4-byte integer to support such states out of the box. It is very common when using [trame-vtklocal](https://github.com/Kitware/trame-vtklocal) where the VTK python package is 64-bit.
+When state contains a `vtkIdTypeArray` (with 8-byte elements), a wasm32 remote session now converts the 8-byte integers to 4-byte `vtkIdType`s so that such states work out of the box. It is very common when using [trame-vtklocal](https://github.com/Kitware/trame-vtklocal) where the VTK python package is 64-bit.
 
 
 ## Fixed a TypeError in the remote session API when using wasm64
 
 __August 28, 2026__
 
-The `vtkRemoteSession::Observe` method threw a `TypeError` in wasm64. This is now fixed in [vtk/vtk!13637](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13637) 
+The `vtkRemoteSession::Observe` method no longer throws a `TypeError` in wasm64. [vtk/vtk!13637](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13637) 
 
 ## Huge speedup for VTK.wasm source builds!
 
 __August 23, 2026__
 
-[vtk/vtk!13610](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13610) seeds the CMake cache to optimize the build system configuration step. This reduced the time taken by the CMake configure stage from 15-20 minutes down to ~40 seconds!
+The CMake cache is now seeded to speed up build system configuration. This reduces the time taken by the CMake configure stage from 15-20 minutes down to ~40 seconds!
 
 ## 9.7.20260823 is now available!
 
@@ -290,9 +290,9 @@ The WASM bundle is available here:
 
 __Auguest 06, 2026__
 
-We added CMake presets to simplify source builds for VTK.wasm.
-If you would rather not manage the toolchain yourself, VTK ships wasm presets that do it for you.
-They require only CMake 3.25 or newer, Ninja and a python3 interpreter:
+VTK now ships CMake presets to simplify source builds for VTK.wasm.
+If you would rather not manage the toolchain yourself, these presets do it for you.
+They require only CMake 3.25 or newer, Ninja, and a python3 interpreter:
 
 ```sh
 cmake --workflow --preset wasm32   # or wasm64
@@ -318,15 +318,17 @@ The WASM bundle is available here:
 
 __July 31, 2026__
 
-When the WASM bundle deserialized a state containing `vtkGenericRenderWindowInteractor`, you could not interact
-with the application because an event loop was not started. This bug was fixed in [vtk/vtk!13509](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13509).
+The WASM bundle now starts the interactor event loop when it deserializes a state containing
+`vtkGenericRenderWindowInteractor`, so you can interact with the application.
+See [vtk/vtk!13509](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13509) for details.
 
 
-## Fixed serialization in vtkDataSetMapper when it was given vtkPolyData input
+## Fix serialization in vtkDataSetMapper for vtkPolyData input
 
 __July 31, 2026__
 
-The mapper serialized into a state whose polydata field was empty. This bug was fixed in [vtk/vtk!13509](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13509).
+The `vtkDataSetMapper` now serializes its `vtkPolyData` input correctly instead of writing a state with an empty polydata field.
+See [vtk/vtk!13509](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13509) for details.
 
 
 ## 9.7.20260726 is now available!
@@ -1158,13 +1160,13 @@ The WASM bundle is available here:
 
 __July 10, 2025__
 
-[vtk/vtk!12278](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12278) fixed a runtime error when the interactor event loop was started in wasm64 bundle.
+The interactor event loop now starts without a runtime error in the wasm64 bundle.
 
 ## Invalidate shader when clipping planes are updated
 
 __July 9, 2025__
 
-[vtk/vtk!12271](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12271) fixed a bug where the mapper clip planes were not applied when developers used Add/RemoveClippingPlane API after initial render.
+Mapper clipping planes now apply correctly when you use the `AddClippingPlane`/`RemoveClippingPlane` API after the initial render.
 
 ## 9.5.20250628 is now available!
 
@@ -1184,7 +1186,7 @@ The WASM bundle is available here:
 
 __June 24, 2025__
 
-The [9.5.0 release](https://www.kitware.com/vtk-9-5-0/) includes many improvments regarding the integration of WASM. In addition to observing VTK objects on the client side, you can also invoke methods on VTK objects. This enables us to implement client/server calls for handling picking with client side objects. The other hidden improvement is related to the increased number of vtk objects available in WASM which should help in reproducing more complex VTK scene more accurately.
+The [9.5.0 release](https://www.kitware.com/vtk-9-5-0/) includes many improvements to the WASM integration. In addition to observing VTK objects on the client side, you can also invoke methods on them, which enables client/server calls for picking with client-side objects. The number of VTK objects available in WASM has also grown, helping you reproduce more complex VTK scenes more accurately.
 
 You can install the equivalent python wheel with the command
 
@@ -1198,25 +1200,25 @@ The WASM bundle is available here: [vtk-9.5.0-wasm32-emscripten.tar.gz](https://
 
 __June 23, 2025__
 
-See [vtk/vtk!12192](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12192)
-- vtkScalarBarActor: update reference coordinates when setting position coordinate.
+[vtk/vtk!12192](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12192) fixes serialization and deserialization in the _RenderingAnnotation_ module:
+- `vtkScalarBarActor` now updates its reference coordinates when you set the position coordinates.
 - Fix deserialization of `vtkAlgorithm` inputs
 - Fix serialization of `vtkDataSetMapper` inputs
-- Enables (de)serialization of necessary indexed properties in _RenderingAnnotation_
+- Enable (de)serialization of the necessary indexed properties in _RenderingAnnotation_
 - Fix (de)serialization of `vtkLabelPlacementMapper` and `vtkLabelHierarchy`
 
 ## Add serialization for vtkGraph and ViewsInfovis module
 
 __June 23, 2025__
 
-See [vtk/vtk!12199](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12199)
+[vtk/vtk!12199](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12199) adds serialization support for `vtkGraph` and the _ViewsInfovis_ module:
 
-- Added manual (de)serialization helper for `vtkGraph`
-- Enable auto serialization for subclasses of `vtkGraph`
-- Enable serialization in _ViewsInfovis_
-    - Expose relevant properties, exclude redundant ones
-- Serialize child items in vtkContextTransform
-    - Cannot do this in `vtkAbstractContextItem` since some subclasses (like `vtkDendrogramItem`) add items to themselves, leading to extra child items after deserialization and errors when rendering those child items.
+- A manual (de)serialization helper for `vtkGraph`
+- Auto serialization for subclasses of `vtkGraph`
+- Serialization in _ViewsInfovis_
+    - Exposes the relevant properties and excludes the redundant ones
+- Serializes the child items in `vtkContextTransform`
+    - This cannot happen in `vtkAbstractContextItem`, since some subclasses (like `vtkDendrogramItem`) add items to themselves, leading to extra child items after deserialization and errors when rendering those child items.
 - A few unrelated serialization fixes (`vtkFramebufferPass`, `vtkMapperCollection`)
 
 ## 9.5.20250621 is now available!
@@ -1263,7 +1265,7 @@ The WASM bundle is available here:
 
 __June 6, 2025__
 
-Clipping planes on mapper is now supported by [vtk/vtk!12176](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12176). This allow us to implement the TIE fighter clip plane demo in client side. 
+Mappers now support clipping planes in [vtk/vtk!12176](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12176). This lets you run the TIE fighter clip plane demo on the client side. 
 
 <iframe src="/vtk-wasm/demo/viewer-starfighter2.html" height="592" width="100%" frameborder="0" allowfullscreen="" title="Rendering clipping"></iframe>
 
@@ -1273,15 +1275,15 @@ __June 5, 2025__
 
 - [vtk/vtk!12162](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12162) fixes serialization errors of classes
 in the _InteractionWidgets_ module.
-- Enable auto serialization for `vtkResliceCursorRepresentation`, `vtkDistanceRepresentation`, `vtkTextRepresentation`, and related classes.
+- Enables auto serialization for `vtkResliceCursorRepresentation`, `vtkDistanceRepresentation`, `vtkTextRepresentation`, and related classes.
 
 ## Fix serialization of various classes
 
 __June 4, 2025__
 
-- [vtk/vtk!12167](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12167) fixed serialization for various classes and enables serialization for more classes in the _ImagingCore_, _ImagingColor_, _RenderingGridAxes_, and the _RenderingImage_ modules.
+- [vtk/vtk!12167](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12167) fixed serialization for various classes and enabled serialization for more classes in the _ImagingCore_, _ImagingColor_, _RenderingGridAxes_, and the _RenderingImage_ modules.
 - The `vtkSignedCharArray` class now has serialization enabled.
-- The redundant width/height properties of vtkActor2D are now excluded from (de)serialization.
+- The redundant width/height properties of `vtkActor2D` are now excluded from (de)serialization.
 
 ## 9.5.20250531 is now available!
 
@@ -1303,35 +1305,35 @@ The WASM bundle is available here:
 __May 27, 2025__
 
 `vtkRemoteSession::getState` is deprecated in favor of `vtkRemoteSession::get`. The new `vtkRemoteSession::set` lets you
-apply properties from JSON in bulk on a VTK object. See [vtrk/vtk!12155](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12155)
+apply properties from JSON to a VTK object in bulk. See [vtk/vtk!12155](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12155)
 
 ## Add runtime support for WebGL2 and WebGPU
 
 __May 24, 2025__
 
-You can now choose the backend to use for rendering your VTK scene. The WebGPU is still work in progress but is now available for testing via runtime configuration option.
+You can now choose the backend to use for rendering your VTK scene. WebGPU is still work in progress but is available for testing via a runtime configuration option.
 
-WebGPU classes in VTK are now serialized and available in the vtkWebAssemblyAsync.{mjs,wasm} files. Subsequent packages will distribute both vtkWebAssemblyAsync.{mjs,wasm} and vtkWebAssembly.{mjs,wasm} files. The async package will only work in browsers that enable JavaScript Promise Integration ([JSPI](https://github.com/WebAssembly/js-promise-integration)). See [vtk/vtk!12143](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12143)
+VTK's WebGPU classes are now serialized and available in the `vtkWebAssemblyAsync.{mjs,wasm}` files. Subsequent packages will distribute both the `vtkWebAssemblyAsync.{mjs,wasm}` and `vtkWebAssembly.{mjs,wasm}` files. The async package will only work in browsers that enable JavaScript Promise Integration ([JSPI](https://github.com/WebAssembly/js-promise-integration)). See [vtk/vtk!12143](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12143)
 
 ## Fix serialization for RenderingVolume module
 
 __May 27, 2025__
 
-[vtk/vtk!12142](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12142) fixes serialization errors that arise when serializing classes in the _RenderingVolume_ module.
+Serialization no longer raises errors for classes in the _RenderingVolume_ module. See [vtk/vtk!12142](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12142) for details.
 
 ## Add standalone and remote session API
 
 __May 19, 2025__
 
-The `vtkWebAssembly.mjs` library now provides two new classes `vtkRemoteSession` and `vtkStandaloneSession`.
-- Remote session API is concerned with use cases where a "server" creates VTK
+The `vtkWebAssembly.mjs` library now provides two new classes, `vtkRemoteSession` and `vtkStandaloneSession`.
+- The remote session API is for use cases where a "server" creates VTK
  objects and sends the state to a WASM "client" that deserializes the state
  into objects to mimic the visualization pipeline on the "server".
  This API does not allow creating objects in the WASM world. It is possible,
  although very difficult and prone to bugs.
 
-- Standalone API is important when one wants to directly create and manipulate objects
- in the local context in the absence of a server. 
+- The standalone API is for when you want to create and manipulate objects
+ directly in the local context, in the absence of a server. 
 
 See [vtk/vtk!12110](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12110)
 
@@ -1339,13 +1341,13 @@ See [vtk/vtk!12110](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12110)
 
 __May 19, 2025__
 
-[vtk/vtk!12129](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12129) fixed a bug where the arrays had their values updated only when the total number of arrays in the vtkFieldData changed between deserializations. Now, it always update the array list because even though the number of arrays remain the same, the arrays themselves might be different.
+`vtkFieldData` arrays now update their values on every deserialization, not only when the total number of arrays changes. Previously, the array list was only updated when the array count changed, even though the arrays themselves might be different. See [vtk/vtk!12129](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12129) for details.
 
 ## Add support for 32 and 64 bits WASM bundle
 
 __May 14, 2025__
 
-Build and distribute artifacts for wasm64. This package allows rendering large meshes bigger than 4GB. It requires a web browser that supports 64-bit wasm memories.
+VTK.wasm now ships wasm64 artifacts. This package lets you render large meshes bigger than 4GB. It requires a web browser that supports 64-bit wasm memories.
 
 ## 9.5.20250513 is now available!
 __May 13, 2025__
@@ -1353,7 +1355,7 @@ __May 13, 2025__
 You can install the equivalent python wheel with the command
 
 ```sh
-pip install "vtk==-9.5.20250513-wa" --extra-index-url https://wheels.vtk.org
+pip install "vtk==9.5.20250513.dev0" --extra-index-url https://wheels.vtk.org
 ```
 
 The WASM bundle is available here: [vtk-9.5.20250513-wasm32-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/5101/download)
@@ -1364,7 +1366,7 @@ __May 10, 2025__
 You can install the equivalent python wheel with the command
 
 ```sh
-pip install "vtk==-9.5.20250510-wa" --extra-index-url https://wheels.vtk.org
+pip install "vtk==9.5.20250510.dev0" --extra-index-url https://wheels.vtk.org
 ```
 
 The WASM bundle is available here: [vtk-9.5.20250510-wasm32-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/5067/download)
@@ -1373,41 +1375,41 @@ The WASM bundle is available here: [vtk-9.5.20250510-wasm32-emscripten.tar.gz](h
 
 __May 5, 2025__
 
-[vtk/vtk!12095](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12095) enables auto serialization for pickers in the _RenderingCore_ module, as well as `vtkAssemblyNode`, `vtkAssemblyPath`, and `vtkProp3DCollection` for properties of certain pickers. 
+You can now serialize pickers in the _RenderingCore_ module, as well as `vtkAssemblyNode`, `vtkAssemblyPath`, and `vtkProp3DCollection` for the properties of certain pickers. See [vtk/vtk!12095](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12095) for details. 
 
-## Fix serialization of VTK classes
+## Enable serialization for many more VTK classes
 
 __April 25, 2025__
 
-Many serialization issues were fixed in [vtk/vtk!12012](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12012). Serialization capability was also added to some classes. Here's a list of classes
-that were affected:
+[vtk/vtk!12012](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/12012) fixed many serialization issues and enabled serialization for the classes
+listed below:
 
-- vtkActor2D
-- vtkBitArray
-- vtkDataArray
-- vtkDiscretizableColorTransferFunction
-- vtkFieldData
-- vtkInformation
-- vtkLabeledContourMapper
-- vtkLogLookupTable
-- vtkMultiBlockDataSet
-- vtkOpenGLLabeledContourMapper
-- vtkPolyDataMapper2D
-- vtkProp3DFollower
-- vtkProperty
-- vtkRenderWindow
-- vtkScalarsToColors
-- vtkShaderProperty
-- vtkStructuredGrid
-- vtkTextPropertyCollection
-- vtkTexture
-- vtkVariant
-- vtkVariantArray
-- vtkWindow
+- `vtkActor2D`
+- `vtkBitArray`
+- `vtkDataArray`
+- `vtkDiscretizableColorTransferFunction`
+- `vtkFieldData`
+- `vtkInformation`
+- `vtkLabeledContourMapper`
+- `vtkLogLookupTable`
+- `vtkMultiBlockDataSet`
+- `vtkOpenGLLabeledContourMapper`
+- `vtkPolyDataMapper2D`
+- `vtkProp3DFollower`
+- `vtkProperty`
+- `vtkRenderWindow`
+- `vtkScalarsToColors`
+- `vtkShaderProperty`
+- `vtkStructuredGrid`
+- `vtkTextPropertyCollection`
+- `vtkTexture`
+- `vtkVariant`
+- `vtkVariantArray`
+- `vtkWindow`
 
 ## Helper JavaScript library
 
 __October 7, 2024__
 
-A new JavaScript library is available under `@kitware/trame-vtklocal` which delivers a set of helper tools for VTK.wasm and JavaScript.
-This include a standalone viewer for a VTK scene dump, a wrapper for pure JavaScript usage and some core handler when creating a widget (i.e. React, Svelt, Angular...) for interating with a trame-vtklocal server implementation.
+A new JavaScript library, `@kitware/trame-vtklocal`, delivers a set of helper tools for VTK.wasm and JavaScript.
+It includes a standalone viewer for a VTK scene dump, a wrapper for pure JavaScript usage, and core handlers for creating a widget (e.g. React, Svelte, Angular...) for interacting with a trame-vtklocal server implementation.
