@@ -26,6 +26,12 @@ The WASM bundle is available here:
 1. [vtk-9.7.20260927-wasm32-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/7913/download)
 2. [vtk-9.7.20260927-wasm64-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/7897/download)
 
+## Enable marshalling for camera manipulators
+
+__September 21, 2026__
+
+You can now serialize and deserialize camera manipulator classes such as `vtkCameraManipulator` and its subclasses. See [vtk/vtk!13724](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13724) for details.
+
 ## 9.7.20260920 is now available!
 
 __September 20, 2026__
