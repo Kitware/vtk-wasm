@@ -24,6 +24,15 @@ jobs:
       - name: Update news.md
         run: python scripts/update-news.py
 
+      - name: Install LLM dependencies
+        run: pip install anthropic
+
+      - name: Draft changelog entries from merged MRs
+        env:
+          GL_VTK_VTK_TOKEN: ${{ secrets.GL_VTK_VTK_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python scripts/update-news-content.py
+
       - name: Commit changes
         run: |
           git config user.name "github-actions[bot]"
