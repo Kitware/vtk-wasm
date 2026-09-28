@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   update-news:
@@ -33,14 +34,21 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python scripts/update-news-content.py
 
-      - name: Commit changes
+      - name: Open pull request
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/news.md
           if git diff --cached --quiet; then
             echo "No changes to news.md"
-          else
-            git commit -m "docs: update news"
-            git push
+            exit 0
           fi
+          BRANCH="docs/update-news-$GITHUB_RUN_ID"
+          git checkout -b "$BRANCH"
+          git commit -m "docs: update news"
+          git push origin "$BRANCH"
+          gh pr create --base main --head "$BRANCH" \
+            --title "docs: update news" \
+            --body "Auto-generated news update for docs/news.md. Please review before merging."
