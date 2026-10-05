@@ -1,3 +1,31 @@
+## 9.7.20261004 is now available!
+
+__October 04, 2026__
+
+You can install the equivalent python wheel with the command
+
+```sh
+pip install "vtk==9.7.20261004.dev0" --extra-index-url https://wheels.vtk.org
+```
+
+The WASM bundle is available here:
+1. [vtk-9.7.20261004-wasm32-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/8039/download)
+2. [vtk-9.7.20261004-wasm64-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/8043/download)
+
+## Update Dawn version and enable DXC shader compilation on Windows
+
+__September 29, 2026__
+
+VTK now builds against Dawn 20260923.214225 in CI, and the WebGPU backend uses DXC for shader compilation on Windows. See [vtk/vtk!13761](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13761) for details.
+
+## Exclude vtkFreeTypeToolsPrivate.h from marshalling
+
+__September 28, 2026__
+
+The new `vtkFreeTypeToolsPrivate.h` header in _RenderingFreeType_ is now ignored by the
+marshalling code generator, so serialization builds succeed again. See
+[vtk/vtk!13751](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13751) for details.
+
 ## 9.7.1 is now available!
 
 __September 27, 2026__
