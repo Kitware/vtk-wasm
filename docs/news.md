@@ -1,3 +1,45 @@
+## Render order-independent translucency with an A-buffer in the webgpu backend
+
+__October 11, 2026__
+
+The webgpu backend now renders translucent geometry using an A-buffer, so overlapping
+transparent surfaces blend correctly regardless of their draw order. See
+[vtk/vtk!13745](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13745) for details.
+
+## 9.7.20261011 is now available!
+
+__October 11, 2026__
+
+You can install the equivalent python wheel with the command
+
+```sh
+pip install "vtk==9.7.20261011.dev0" --extra-index-url https://wheels.vtk.org
+```
+
+The WASM bundle is available here:
+1. [vtk-9.7.20261011-wasm32-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/8100/download)
+2. [vtk-9.7.20261011-wasm64-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/8101/download)
+
+## Query WebAssembly heap memory usage
+
+__October 09, 2026__
+
+VTK.wasm now provides a global `getMemoryUsageStatistics()` method that reports the free, max, total, and used memory in the WebAssembly heap. You can use it to monitor allocations made by your application at runtime. See [vtk/vtk!13795](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13795) for details.
+
+## Speed up the first frame with the webgpu backend
+
+__October 09, 2026__
+
+The webgpu backend now creates render pipelines lazily, which shortens the time to the first
+rendered frame. See [vtk/vtk!13786](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13786) for details.
+
+## Fix key press repeat count in wasm interactors
+
+__October 08, 2026__
+
+The first key press event now reports a `RepeatCount` of 0, matching the behavior on other
+platforms. See [vtk/vtk!13794](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13794) for details.
+
 ## 9.7.20261004 is now available!
 
 __October 04, 2026__
