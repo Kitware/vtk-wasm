@@ -64,8 +64,12 @@ export class RemoteSession {
       "vtkXOpenGLRenderWindow",
       "vtkWin32OpenGLRenderWindow",
       "vtkCocoaRenderWindow",
-      "vtkWebGPURenderWindow"
-    ].forEach((name) => native.skipProperty(name, "Size"));
+      "vtkWebGPURenderWindow",
+    ].forEach((name) => {
+      native.skipProperty(name, "ShowWindow");
+      native.skipProperty(name, "Size");
+      native.skipProperty(name, "UseOffScreenBuffers");
+    });
 
     // The interactor flips DOM event Y coordinates against its Size. Applying
     // the server's headless Size (commonly 300x300) after the render window has
