@@ -1,3 +1,38 @@
+## 9.7.20261018 is now available!
+
+__October 18, 2026__
+
+You can install the equivalent python wheel with the command
+
+```sh
+pip install "vtk==9.7.20261018.dev0" --extra-index-url https://wheels.vtk.org
+```
+
+The WASM bundle is available here:
+1. [vtk-9.7.20261018-wasm32-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/8132/download)
+2. [vtk-9.7.20261018-wasm64-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/8134/download)
+
+## Create the WebGPU surface for externally owned views
+
+__October 16, 2026__
+
+VTK now creates the WebGPU surface even when the render window's view is externally owned, so
+embedding VTK in a canvas managed by your application renders correctly.
+See [vtk/vtk!13816](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13816) for details.
+
+## Add WebGPU camera pass
+
+__October 13, 2026__
+
+VTK now provides WebGPU implementations of `vtkCameraPass` and `vtkClearRGBPass`. These classes, along with `vtkLightingMapPass` and `vtkRenderStepsPass`, now live in _RenderingCore_ so you can use them with the WebGPU backend, while the OpenGL versions are available as `vtkOpenGLCameraPass` and `vtkOpenGLClearRGBPass`. See [vtk/vtk!13578](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13578) for details.
+
+## Fix WebGPU documentation and formatting
+
+__October 13, 2026__
+
+The _RenderingWebGPU_ documentation now reads correctly, with corrected formatting and
+clarified wording. See [vtk/vtk!13799](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13799) for details.
+
 ## Render order-independent translucency with an A-buffer in the webgpu backend
 
 __October 11, 2026__
