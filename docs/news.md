@@ -1,3 +1,105 @@
+## 9.7.20261025 is now available!
+
+__October 25, 2026__
+
+You can install the equivalent python wheel with the command
+
+```sh
+pip install "vtk==9.7.20261025.dev0" --extra-index-url https://wheels.vtk.org
+```
+
+The WASM bundle is available here:
+1. [vtk-9.7.20261025-wasm32-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/8190/download)
+2. [vtk-9.7.20261025-wasm64-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/8191/download)
+
+## Configure VTK with CMake without Dawn
+
+__October 23, 2026__
+
+You can now configure VTK with CMake when Dawn is unavailable, which simplifies WebGPU builds that
+target the browser's native WebGPU implementation. See
+[vtk/vtk!13787](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13787) for details.
+
+## Improve rendering performance of the webgpu backend
+
+__October 23, 2026__
+
+The webgpu backend now renders scenes faster. You should notice better frame rates in your
+applications without any code changes.
+See [vtk/vtk!13831](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13831) for details.
+
+## Fire wheel events only for non-zero scroll deltas
+
+__October 23, 2026__
+
+VTK.wasm now fires wheel forward/backward events only when the horizontal delta is zero, and
+wheel right/left events only when the vertical delta is zero. This prevents spurious scroll
+interactions when a trackpad or mouse reports movement along a single axis.
+See [vtk/vtk!13839](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13839) for details.
+
+## Request optional WebGPU features only when the adapter supports them
+
+__October 22, 2026__
+
+VTK no longer requests the `bgra8unorm-storage` feature and now requests `float32-filterable` only when the adapter advertises it. This introduces the notion of "optional" features, letting VTK fall back to an alternate path whenever an implementation lacks them. See [vtk/vtk!13853](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13853) for details.
+
+## Fix incorrect cast in vtkOpenGLFluidMapper serialization
+
+__October 22, 2026__
+
+Serialization and deserialization of `vtkOpenGLFluidMapper` no longer perform an incorrect
+type cast. See [vtk/vtk!13849](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13849) for details.
+
+## Fix double application of actor opacity in the WebGPU fragment shader
+
+__October 22, 2026__
+
+The WebGPU backend now applies the actor opacity exactly once in the fragment shader, so translucent
+actors render with the opacity you requested instead of an overly transparent result.
+See [vtk/vtk!13832](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13832) for details.
+
+## Fix undefined behavior when destroying expired wasm timers
+
+__October 22, 2026__
+
+The wasm render window interactor now checks that a timer still exists before destroying it.
+Previously, destroying a one-shot timer that had already fired erased an invalid iterator,
+causing undefined behavior. See [vtk/vtk!13842](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13842) for details.
+
+## Fix memory leak from leftover timers in the wasm interactor
+
+__October 22, 2026__
+
+Leftover timers no longer leak the internals pointer in the WebAssembly interactor. VTK now
+cleans up pending timers so their associated internal state is released properly.
+See [vtk/vtk!13841](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13841) for details.
+
+## Fix removal of the wasm resize callback during cleanup
+
+__October 22, 2026__
+
+VTK now correctly removes the registered resize callback during cleanup, even when you disable resize handling after the callback was registered. Previously, the callback lingered and continued to respond to window size changes. See [vtk/vtk!13840](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13840) for details.
+
+## Register double-click and focus event callbacks in the wasm interactor
+
+__October 22, 2026__
+
+The wasm interactor now registers callbacks for the `dblclick`, `focusin`, and `focusout` browser events. These events were already handled during event processing, but their callbacks were never hooked up, so they never reached your application. See [vtk/vtk!13844](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13844) for details.
+
+## Ignore mouse forward and back buttons in wasm interactor
+
+__October 21, 2026__
+
+VTK now ignores the forward and back buttons found on some mice instead of treating them as
+regular mouse clicks. Previously, these buttons indexed past the end of the button map.
+See [vtk/vtk!13838](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13838) for details.
+
+## Pop WebAssembly events from the queue before processing them
+
+__October 21, 2026__
+
+The WebAssembly event loop now removes each event from the queue before dispatching it, so an event being handled no longer appears in the pending queue. See [vtk/vtk!13843](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13843) for details.
+
 ## 9.7.20261018 is now available!
 
 __October 18, 2026__
