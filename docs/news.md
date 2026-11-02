@@ -1,3 +1,49 @@
+## Fix window resizing with the WebGPU backend on macOS
+
+__November 02, 2026__
+
+The WebGPU backend now handles window resize events correctly on macOS. See [vtk/vtk!13903](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13903) for details.
+
+## 9.7.20261101 is now available!
+
+__November 01, 2026__
+
+You can install the equivalent python wheel with the command
+
+```sh
+pip install "vtk==9.7.20261101.dev0" --extra-index-url https://wheels.vtk.org
+```
+
+The WASM bundle is available here:
+1. [vtk-9.7.20261101-wasm32-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/8250/download)
+2. [vtk-9.7.20261101-wasm64-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/8249/download)
+
+## Fix duplicate serialization in UpdateStatesFromObjects
+
+__October 30, 2026__
+
+Calling `UpdateStatesFromObjects(ids)` no longer serializes the same object more than once, and a unit test now guards against regressions. See [vtk/vtk!13918](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13918) for details.
+
+## Fix cached translucency check in vtkWebGPUActor discarding the mapper's answer
+
+__October 28, 2026__
+
+`vtkWebGPUActor` now correctly combines the mapper's cached translucency answer with its own, instead of discarding it, and rebuilds the graphics pipelines whenever `vtkWebGPUActor::HasTranslucentGeometry()` changes so the deep framebuffer pass is used only when needed. This fixes blank renders that occurred with certain sequences of method calls or combinations of `vtkProperty` and `vtkMapper` flags. See [vtk/vtk!13898](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13898) for details.
+
+## Request all advertised WebGPU limits during device creation
+
+__October 28, 2026__
+
+VTK now requests every advertised core limit when creating a WebGPU device, instead of only three, so you get the full texture and compute workgroup capabilities your hardware supports. The `TestReportWebGPUCapabilities` test now prints enabled features, compares adapter and device limits, and can require a hardware adapter, which Linux WebGPU CI jobs enforce. See [vtk/vtk!13815](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13815) for details.
+
+## Ignore informational log lines when detecting wasm test errors
+
+__October 26, 2026__
+
+The wasm test error detection now skips informational log lines, so image comparison
+messages that mention "error" no longer cause false test failures. See
+[vtk/vtk!13845](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13845) for details.
+
 ## 9.7.20261025 is now available!
 
 __October 25, 2026__
