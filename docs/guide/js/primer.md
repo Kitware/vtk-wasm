@@ -202,8 +202,7 @@ actor = null;
 </pre>
 </Playground>
 
-## Arrays
-
+## Copy Javascript TypedArray to VTK AoS array
 VTK provides array classes for typed data exchange. These arrays accept JavaScript `TypedArray` instances directly, which makes initialization straightforward.
 
 <Playground>
@@ -221,12 +220,45 @@ VTK provides array classes for typed data exchange. These arrays accept JavaScri
 </html></textarea>
 <pre data-lang="js" style="display:none">
 const vtk = await vtkwasm.ready;
-const coordinates = vtk.vtkTypeFloat64Array();
-coordinates.numberOfComponents = 3;
-coordinates.setArray(new Float64Array([-1, -1, 0, 1, -1, 0]));
+const typedArrayInterface = vtkwasm.session.typedArrayInterface;
+const inputValues = new Float32Array([-1, -1, 0, 1, 1, 0]);
+const coordinates = typedArrayInterface.toVTKAoSArray(inputValues, 3, "Points");
 console.log(coordinates.getTuple1(0));
 </pre>
 </Playground>
+
+## Create Javascript TypedArray views into VTK AoS arrays
+
+<Playground>
+    <textarea data-lang="html" style="display:none"><!doctype html>
+<html lang="en">
+    <head>
+        <script
+            src="https://unpkg.com/@kitware/vtk-wasm/vtk-umd.js"
+            id="vtk-wasm"
+            data-url="https://raw.githack.com/Kitware/vtk-wasm/dist/latest/vtk-wasm32-emscripten.tar.gz">
+        </script>
+    </head>
+    <body>
+    </body>
+</html></textarea>
+<pre data-lang="js" style="display:none">
+const vtk = await vtkwasm.ready;
+const tai = vtkwasm.session.typedArrayInterface;
+const array = vtk.vtkTypeInt32Array();
+console.log("-> Filling 10 tuples of VTK array with 2s")
+array.setNumberOfTuples(10);
+array.fill(2);
+const arrayView = tai.toJSTypedArray(array);
+console.log(`arrayView: ${arrayView.toString()}`);
+console.log("-> Setting arrayView[0] to 1")
+arrayView[0] = 1;
+console.log(`arrayView: ${arrayView.toString()}`);
+console.log("-> Changes to the view show up in VTK array as well")
+console.log(`array[0]: ${array.getTuple1(0)}`);
+</pre>
+</Playground>
+
 
 ## User data
 
