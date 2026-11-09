@@ -1,3 +1,57 @@
+## Add 2D context rendering support to the webgpu backend
+
+__November 09, 2026__
+
+VTK now implements `vtkContextDevice2D` for the webgpu backend, so you can draw 2D
+lines, polygons, images, sprites, and text with charts and context items in webgpu
+render windows. See [vtk/vtk!13789](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13789) for details.
+
+## Add vtkWebGPUUniforms for custom shader uniforms
+
+__November 08, 2026__
+
+The WebGPU backend now provides `vtkWebGPUUniforms`, so custom vertex and fragment uniforms set on a shader property are stored instead of discarded with a "not overridden" warning. Values follow the same rules as `vtkOpenGLUniforms`: array setters stay distinct from scalar and vector ones, a uniform keeps its type, unsigned char colors are normalized to [0, 1], and matrices are stored row by row. Note that nothing in the WebGPU backend reads these values yet; see [vtk/vtk!13928](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13928) for details.
+
+## 9.7.20261108 is now available!
+
+__November 08, 2026__
+
+You can install the equivalent python wheel with the command
+
+```sh
+pip install "vtk==9.7.20261108.dev0" --extra-index-url https://wheels.vtk.org
+```
+
+The WASM bundle is available here:
+1. [vtk-9.7.20261108-wasm32-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/8325/download)
+2. [vtk-9.7.20261108-wasm64-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/8329/download)
+
+## Improve WGSL shader diagnostics in the webgpu backend
+
+__November 06, 2026__
+
+The webgpu backend now reports clearer WGSL shader compilation diagnostics, making it easier to pinpoint errors in shader source. See [vtk/vtk!13862](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13862) for details.
+
+## Support physically-based rendering with image-based lighting in the WebGPU backend
+
+__November 05, 2026__
+
+You can now use `vtkProperty::SetInterpolationToPBR()` with the WebGPU backend, which brings it to parity with the OpenGL backend. The shading model, image-based lighting, and material textures all follow the OpenGL implementation. See [vtk/vtk!13788](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13788) for details.
+
+## 9.7.2 is now available!
+
+__November 04, 2026__
+
+You can install the equivalent python wheel with the command
+
+```sh
+pip install "vtk==9.7.2"
+```
+
+The WASM bundle is available here:
+1. [vtk-9.7.2-wasm32-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/8293/download)
+2. [vtk-9.7.2-wasm64-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/8296/download)
+
 ## Fix window resizing with the WebGPU backend on macOS
 
 __November 02, 2026__
