@@ -223,7 +223,8 @@ const vtk = await vtkwasm.ready;
 const typedArrayInterface = vtkwasm.session.typedArrayInterface;
 const inputValues = new Float32Array([-1, -1, 0, 1, 1, 0]);
 const coordinates = typedArrayInterface.toVTKAoSArray(inputValues, 3, "Points");
-console.log(coordinates.getTuple1(0));
+console.log(`Point 0: ${coordinates.getTuple3(0)}`);
+console.log(`Point 1: ${coordinates.getTuple3(1)}`);
 </pre>
 </Playground>
 
