@@ -1,3 +1,21 @@
+## Emit valid WGSL texture types for every sample type
+
+__November 09, 2026__
+
+VTK now generates a complete WGSL texture type for each sample type, so a depth texture becomes `texture_depth_2d` instead of an invalid sampled type parameter. Previously only the float sample type produced a valid declaration, while sint, uint and depth emitted types that WGSL does not define. The polydata mappers use this at all three shader generation sites; see [vtk/vtk!13869](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13869) for details.
+
+## Fix backface colors and opaque occlusion in the webgpu backend
+
+__November 09, 2026__
+
+Back-facing triangles now correctly use the actor's backface material in the webgpu backend, and transparency resolution discards fragments hidden behind opaque geometry before compositing. See [vtk/vtk!13972](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13972) for details.
+
+## Add debugging aids for WebGPU PBR shading
+
+__November 09, 2026__
+
+You can now inspect individual PBR shading terms in the webgpu backend by calling `vtkWebGPURenderer::SetPBRDebugView()`, which displays albedo, normals, roughness, metallic, ambient occlusion, emissive, F0, N.V, direct lighting, or the diffuse and specular image based lighting instead of the shaded color. Setting the `VTK_WEBGPU_PBR_DUMP_DIR` environment variable additionally writes the textures that `vtkWebGPUEnvironmentMap` generates as PFM files, and a new developer guide in _RenderingWebGPU_ documents the material data layout and shader assembly. See [vtk/vtk!13976](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13976) for details.
+
 ## Add 2D context rendering support to the webgpu backend
 
 __November 09, 2026__
