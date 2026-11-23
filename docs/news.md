@@ -1,3 +1,49 @@
+## Increase CI timeouts for macOS and WebAssembly jobs
+
+__November 23, 2026__
+
+VTK now allows more time for the macOS x86_64 and wasm32 test jobs to finish, which prevents
+spurious CI failures caused by premature timeouts. See [vtk/vtk!14037](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/14037) for details.
+
+## 9.7.20261122 is now available!
+
+__November 22, 2026__
+
+You can install the equivalent python wheel with the command
+
+```sh
+pip install "vtk==9.7.20261122.dev0" --extra-index-url https://wheels.vtk.org
+```
+
+The WASM bundle is available here:
+1. [vtk-9.7.20261122-wasm32-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/8386/download)
+2. [vtk-9.7.20261122-wasm64-emscripten.tar.gz](https://gitlab.kitware.com/vtk/vtk/-/package_files/8387/download)
+
+## Add hardware accelerated volume mapper for structured datasets in the webgpu backend
+
+__November 20, 2026__
+
+You can now render structured datasets as volumes with the webgpu backend using a hardware accelerated GPU ray cast mapper. It supports isosurface rendering, slice planes, clipping with multiple volumes, model transform matrices, and AMR volumes. See [vtk/vtk!13573](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13573) for details.
+
+## Render background textures with backface support in the WebGPU backend
+
+__November 19, 2026__
+
+The WebGPU renderer now draws mono and stereo background textures, correctly handles premultiplied alpha, and honors the `ShowTexturesOnBackface` property. Changes to texture inputs and properties now take effect after the first render.
+See [vtk/vtk!13993](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13993) for details.
+
+## Fix stale cell IDs in WebGPU selections when preceding cell counts change
+
+__November 19, 2026__
+
+The WebGPU topology cache now accounts for the cell-ID offset and rebuilds when it changes, so adding vertex or line cells to a `vtkPolyData` no longer leaves stale polygon IDs in the selection buffer. See [vtk/vtk!14023](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/14023) for details.
+
+## Add RenderingSlang module to compile Slang shaders to WGSL
+
+__November 16, 2026__
+
+VTK now provides the _RenderingSlang_ module, whose `vtkSlangShaderManager` compiles Slang shaders to WGSL through the SlangKit library, reporting bindings, uniform block layouts and parameter schemas from reflection. Enable it with the new `VTK_USE_SLANG` option, which requires WebGPU on a non-Emscripten platform and SlangKit 0.1 or newer; when disabled, the module still builds but reports that SlangKit is unavailable. See [vtk/vtk!13980](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/13980) for details.
+
 ## Emit valid WGSL texture types for every sample type
 
 __November 09, 2026__
