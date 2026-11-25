@@ -1,10 +1,3 @@
-## Increase CI timeouts for macOS and WebAssembly jobs
-
-__November 23, 2026__
-
-VTK now allows more time for the macOS x86_64 and wasm32 test jobs to finish, which prevents
-spurious CI failures caused by premature timeouts. See [vtk/vtk!14037](https://gitlab.kitware.com/vtk/vtk/-/merge_requests/14037) for details.
-
 ## 9.7.20261122 is now available!
 
 __November 22, 2026__
